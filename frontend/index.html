@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Energenius - Login</title>
+    <link rel="icon" href="assets/images/favicon.png" />
+    <link rel="stylesheet" href="css/login.css" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+  </head>
+  <body>
+    <div class="login-container">
+      <!-- Background Animation -->
+      <div class="grid-background">
+        <div class="grid-lines"></div>
+        <div class="power-flow"></div>
+      </div>
+
+      <!-- Main Content -->
+      <div class="login-content">
+        <!-- Header -->
+        <div class="login-header">
+          <div class="logo">
+            <i class="fas fa-bolt"></i>
+            <span>Energenius</span>
+          </div>
+          <h1>Power Grid Analytics</h1>
+          <p>Advanced electricity consumption prediction platform</p>
+        </div>
+
+        <!-- Login Form -->
+        <div class="login-form-container">
+          <form id="loginForm" class="login-form">
+            <h2>Sign In</h2>
+
+            <!-- Alert Message -->
+            <div id="alertMessage" class="alert hidden"></div>
+
+            <!-- Username Field -->
+            <div class="input-group">
+              <i class="fas fa-user"></i>
+              <input
+                type="text"
+                id="username"
+                name="username"
+                placeholder="Username"
+                required
+                autocomplete="username"
+              />
+              <div class="input-error" id="usernameError"></div>
+            </div>
+
+            <!-- Password Field -->
+            <div class="input-group">
+              <i class="fas fa-lock"></i>
+              <input
+                type="password"
+                id="password"
+                name="password"
+                placeholder="Password"
+                required
+                autocomplete="current-password"
+              />
+              <button type="button" class="toggle-password" id="togglePassword">
+                <i class="fas fa-eye"></i>
+              </button>
+              <div class="input-error" id="passwordError"></div>
+            </div>
+
+            <!-- Login Button -->
+            <button type="submit" class="login-btn" id="loginBtn">
+              <span class="btn-text">Sign In</span>
+              <div class="btn-loader hidden">
+                <i class="fas fa-spinner fa-spin"></i>
+              </div>
+            </button>
+          </form>
+        </div>
+
+        <!-- Logo Carousel -->
+        <div class="carousel-section">
+          <h4>Supported by</h4>
+          <div class="carousel-container">
+            <div class="carousel-wrapper">
+              <div class="carousel-track" id="carouselTrack">
+                <!-- EPCG Slide -->
+                <div class="carousel-slide">
+                  <a
+                    href="https://www.epcg.com/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="sponsor-link-item"
+                  >
+                    <img
+                      src="assets/images/epcg-logo.png"
+                      alt="EPCG"
+                      class="sponsor-logo"
+                    />
+                  </a>
+                </div>
+                <!-- CANU Slide -->
+                <div class="carousel-slide">
+                  <a
+                    href="https://canu.me/en"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="sponsor-link-item"
+                  >
+                    <img
+                      src="assets/images/canu-logo.png"
+                      alt="CANU"
+                      class="sponsor-logo"
+                    />
+                  </a>
+                </div>
+                <!-- CGES Slide -->
+                <div class="carousel-slide">
+                  <a
+                    href="https://www.cges.me/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="sponsor-link-item"
+                  >
+                    <img
+                      src="assets/images/cges-logo.png"
+                      alt="CGES"
+                      class="sponsor-logo"
+                    />
+                  </a>
+                </div>
+                <!-- ZHMS Slide -->
+                <div class="carousel-slide">
+                  <a
+                    href="https://www.meteo.co.me/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="sponsor-link-item"
+                  >
+                    <img
+                      src="assets/images/zhms-logo.svg"
+                      alt="ZHMS"
+                      class="sponsor-logo"
+                    />
+                  </a>
+                </div>
+                <!-- CEDIS Slide -->
+                <div class="carousel-slide">
+                  <a
+                    href="https://www.cedis.me/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="sponsor-link-item"
+                  >
+                    <img
+                      src="assets/images/cedis-logo.png"
+                      alt="CEDIS"
+                      class="sponsor-logo"
+                    />
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            <!-- Navigation Dots -->
+            <div class="carousel-dots">
+              <button class="dot active" data-slide="0"></button>
+              <button class="dot" data-slide="1"></button>
+              <button class="dot" data-slide="2"></button>
+              <button class="dot" data-slide="3"></button>
+              <button class="dot" data-slide="4"></button>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="progress-container">
+              <div class="progress-bar" id="progressBar"></div>
+            </div>
+
+            <!-- Navigation Arrows -->
+            <button class="carousel-btn prev-btn" id="prevBtn">
+              <i class="fas fa-chevron-left"></i>
+            </button>
+            <button class="carousel-btn next-btn" id="nextBtn">
+              <i class="fas fa-chevron-right"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="js/auth.js"></script>
+  </body>
+</html>

@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Energenius - Dashboard</title>
+    <link rel="icon" href="assets/images/favicon.png" type="image/x-icon" />
+    <link rel="stylesheet" href="css/dashboard.css" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  </head>
+  <body>
+    <div class="dashboard-container">
+      <!-- Navigation -->
+      <nav class="navbar">
+        <div class="nav-brand">
+          <i class="fas fa-bolt"></i>
+          <span>Energenius</span>
+        </div>
+        <div class="nav-user">
+          <i class="fas fa-user"></i>
+          <span id="userName">Loading...</span>
+          <button id="logoutBtn" class="logout-btn">
+            <i class="fas fa-sign-out-alt"></i>
+            Logout
+          </button>
+        </div>
+      </nav>
+
+      <!-- Main Content -->
+      <main class="main-content">
+        <!-- Welcome Header -->
+        <div class="welcome-header">
+          <h1>Electricity Consumption Prediction</h1>
+          <p>Upload your data and get AI-powered consumption predictions</p>
+        </div>
+
+        <!-- Top Section: Upload and Controls -->
+        <div class="dashboard-top-grid">
+          <!-- File Upload Section -->
+          <div class="dashboard-card upload-section">
+            <div class="card-header">
+              <h2><i class="fas fa-upload"></i> Data Upload</h2>
+              <p>Upload your Excel file with electricity consumption data</p>
+            </div>
+
+            <div class="upload-area" id="uploadArea">
+              <div class="upload-content">
+                <i class="fas fa-cloud-upload-alt upload-icon"></i>
+                <h3>Drag & Drop Your Excel File</h3>
+                <p>
+                  or
+                  <button class="browse-btn" id="browseBtn">
+                    Browse Files
+                  </button>
+                </p>
+                <div class="upload-info">
+                  <small
+                    >Required: Excel file with exactly 25 rows × 24 columns (1
+                    header + 24 data rows)</small
+                  >
+                  <small>Supported formats: .xlsx, .xls | Max size: 10MB</small>
+                </div>
+              </div>
+              <input type="file" id="fileInput" accept=".xlsx,.xls" hidden />
+            </div>
+
+            <div class="upload-status" id="uploadStatus" style="display: none">
+              <div class="status-content">
+                <div class="progress-bar">
+                  <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <p id="statusText">Uploading...</p>
+              </div>
+            </div>
+
+            <div class="file-info" id="fileInfo" style="display: none">
+              <div class="file-details">
+                <i class="fas fa-file-excel"></i>
+                <div class="file-meta">
+                  <span class="file-name" id="fileName"></span>
+                  <span class="file-size" id="fileSize"></span>
+                </div>
+                <button class="remove-file-btn" id="removeFileBtn">
+                  <i class="fas fa-times"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Prediction Controls -->
+          <div class="dashboard-card controls-section">
+            <div class="card-header">
+              <h2><i class="fas fa-cogs"></i> Prediction Settings</h2>
+              <p>Configure your prediction parameters</p>
+            </div>
+
+            <div class="controls-content">
+              <div class="control-group">
+                <label for="predictionPeriod">Prediction Period</label>
+                <select id="predictionPeriod" class="form-select">
+                  <option value="24">Next 24 hours</option>
+                </select>
+              </div>
+
+              <div class="control-group">
+                <label for="modelType">AI Model</label>
+                <select id="modelType" class="form-select">
+                  <option value="nbeats">N-BEATS</option>
+                  <option value="cnn-nbeats">CNN-N-BEATS</option>
+                  <option value="nbeats-cnn">N-BEATS-CNN</option>
+                </select>
+              </div>
+
+              <button class="predict-btn" id="predictBtn" disabled>
+                <i class="fas fa-magic"></i>
+                Generate Predictions
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Full Width Preview Section -->
+        <div class="dashboard-card preview-section full-width">
+          <div class="card-header">
+            <h2><i class="fas fa-table"></i> Data Preview</h2>
+            <p>Preview and verify your uploaded data</p>
+          </div>
+
+          <div class="preview-content" id="previewContent">
+            <div class="no-data">
+              <i class="fas fa-table"></i>
+              <p>Upload a file to preview your data</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dashboard Grid -->
+        <div class="dashboard-grid">
+          <!-- Results Visualization -->
+          <div class="dashboard-card visualization-section">
+            <div class="card-header">
+              <h2><i class="fas fa-chart-line"></i> Prediction Results</h2>
+              <div class="chart-controls">
+                <button class="chart-btn active" data-chart="line">
+                  <i class="fas fa-chart-line"></i> Chart View
+                </button>
+                <button class="chart-btn" data-view="table">
+                  <i class="fas fa-table"></i> Table View
+                </button>
+              </div>
+            </div>
+
+            <div class="chart-container">
+              <div class="no-results" id="noResults">
+                <i class="fas fa-chart-line"></i>
+                <p>Generate predictions to view results</p>
+              </div>
+              <canvas id="predictionChart" style="display: none"></canvas>
+              <div
+                id="predictionTable"
+                class="prediction-table"
+                style="display: none"
+              ></div>
+            </div>
+          </div>
+
+          <!-- Statistics and Export Panel -->
+          <div class="dashboard-card stats-export-section">
+            <div class="card-header">
+              <h2><i class="fas fa-analytics"></i> Prediction Statistics</h2>
+            </div>
+
+            <div class="stats-grid" id="statsGrid">
+              <div class="stat-item">
+                <div class="stat-icon">
+                  <i class="fas fa-calculator"></i>
+                </div>
+                <div class="stat-content">
+                  <span class="stat-label">Average Consumption</span>
+                  <span class="stat-value" id="avgPredictionConsumption"
+                    >--</span
+                  >
+                </div>
+              </div>
+
+              <div class="stat-item">
+                <div class="stat-icon">
+                  <i class="fas fa-bolt"></i>
+                </div>
+                <div class="stat-content">
+                  <span class="stat-label">Daily Total</span>
+                  <span class="stat-value" id="dailyTotalConsumption">--</span>
+                </div>
+              </div>
+
+              <div class="stat-item">
+                <div class="stat-icon">
+                  <i class="fas fa-arrow-trend-up"></i>
+                </div>
+                <div class="stat-content">
+                  <span class="stat-label">Peak Consumption</span>
+                  <span class="stat-value" id="peakPredictionConsumption"
+                    >--</span
+                  >
+                  <span class="stat-time" id="peakHour">--</span>
+                </div>
+              </div>
+
+              <div class="stat-item">
+                <div class="stat-icon">
+                  <i class="fas fa-arrow-trend-down"></i>
+                </div>
+                <div class="stat-content">
+                  <span class="stat-label">Minimum Consumption</span>
+                  <span class="stat-value" id="minPredictionConsumption"
+                    >--</span
+                  >
+                  <span class="stat-time" id="minHour">--</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Export Section Below Statistics -->
+            <div class="export-section-compact">
+              <div class="export-header">
+                <h3><i class="fas fa-download"></i> Export Results</h3>
+              </div>
+              <div class="export-options">
+                <button class="export-btn" id="exportCSV" disabled>
+                  <i class="fas fa-file-csv"></i>
+                  Export to CSV
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <script src="js/dashboard.js"></script>
+  </body>
+</html>

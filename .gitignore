@@ -1,0 +1,13 @@
+.env*
+venv/
+flask_session/
+__pycache__/
+*.py[cod]
+*$py.class
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.log
+.ipynb_checkpoints
