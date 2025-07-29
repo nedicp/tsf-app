@@ -1,5 +1,6 @@
 from flask import Blueprint, request, jsonify, session, redirect, url_for
 from backend.models.user import User
+from backend.utils.limiter import limiter
 import re
 
 auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
@@ -19,6 +20,7 @@ def validate_password(password):
     return True, "Valid"
 
 @auth_bp.route('/login', methods=['POST'])
+@limiter.limit("10 per minute")  # Prevent brute force attacks
 def login():
     """Handle user login"""
     try:
@@ -76,6 +78,7 @@ def login():
         }), 500
 
 @auth_bp.route('/logout', methods=['POST'])
+@limiter.limit("30 per minute")  # More lenient for logout
 def logout():
     """Handle user logout"""
     try:
@@ -92,6 +95,7 @@ def logout():
         }), 500
 
 @auth_bp.route('/check-session', methods=['GET'])
+@limiter.limit("60 per minute")  # Frequent session checks are normal
 def check_session():
     """Check if user is logged in"""
     if 'user' in session:

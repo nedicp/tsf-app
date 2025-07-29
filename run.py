@@ -9,8 +9,8 @@ from backend.app import create_app
 if __name__ == '__main__':
     app = create_app()
     print("🔌 Energenius starting...")
-    print("📊 Access the application at: http://localhost:5000")
+    print("📊 Access the application at: http://localhost:5050")
     print("🔑 Demo credentials:")
-    print("   Admin: admin@electric-grid.com / admin123")
-    print("   Analyst: analyst@electric-grid.com / analyst123")
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    print("   Username: admin, analyst, or demo")
+    print("   Password: admin123, analyst123, or demo123")
+    app.run(debug=True, host='0.0.0.0', port=5050)

@@ -232,8 +232,8 @@ class DashboardManager {
             <thead>
                 <tr>
                     <th>Hour</th>
-                    <th>Last 24h (MWh)</th>
-                    <th>Predicted (MWh)</th>
+                    <th>Previous 24h (MWh)</th>
+                    <th>Next 24h (MWh)</th>
                     <th>Confidence Range (±3%)</th>
                 </tr>
             </thead>
@@ -495,17 +495,46 @@ class DashboardManager {
         predictBtn.disabled = false;
     }
 
+    retryPrediction() {
+        // Automatically trigger prediction generation when user clicks "Try Again"
+        console.log('Retrying prediction after service warning...');
+        this.generatePredictions();
+    }
+
+    async checkMLServiceHealth() {
+        try {
+            const response = await fetch('/api/ml-service/health');
+            const result = await response.json();
+            return result.ml_service === 'online';
+        } catch (error) {
+            console.error('ML service health check failed:', error);
+            return false;
+        }
+    }
+
     async generatePredictions() {
         if (!this.uploadedData) {
             this.showNotification('Please upload data first', 'error');
             return;
         }
 
+        // Check ML service health before prediction
         const predictBtn = document.getElementById('predictBtn');
         const originalText = predictBtn.innerHTML;
         
-        predictBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+        predictBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Checking service...';
         predictBtn.disabled = true;
+
+        const isServiceHealthy = await this.checkMLServiceHealth();
+        
+        if (!isServiceHealthy) {
+            this.showServiceDownWarning();
+            predictBtn.innerHTML = originalText;
+            predictBtn.disabled = false;
+            return;
+        }
+
+        predictBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating predictions...';
 
         try {
             const predictionPeriod = document.getElementById('predictionPeriod').value;
@@ -529,9 +558,18 @@ class DashboardManager {
                 this.predictionResults = result.data;
                 this.displayPredictionResults(result.data);
                 this.enableExportControls();
-                this.showNotification('Predictions generated successfully!', 'success');
+                
+                const processingTime = result.data.processingTime || 0;
+                this.showNotification(
+                    `Predictions generated successfully in ${processingTime.toFixed(2)}s using ${modelType.toUpperCase()}!`, 
+                    'success'
+                );
             } else {
-                throw new Error(result.message || 'Prediction failed');
+                if (result.service_status === 'offline') {
+                    this.showServiceDownWarning();
+                } else {
+                    throw new Error(result.message || 'Prediction failed');
+                }
             }
         } catch (error) {
             console.error('Prediction error:', error);
@@ -540,6 +578,58 @@ class DashboardManager {
             predictBtn.innerHTML = originalText;
             predictBtn.disabled = false;
         }
+    }
+
+    showServiceDownWarning() {
+        // Create a prominent warning overlay
+        const overlay = document.createElement('div');
+        overlay.className = 'service-warning-overlay';
+        overlay.innerHTML = `
+            <div class="service-warning-content">
+                <div class="service-warning-icon">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <h3>ML Service Temporarily Unavailable</h3>
+                <p>The machine learning prediction service is currently offline or unreachable.</p>
+                <p>Please check:</p>
+                <ul>
+                    <li>Your internet connection</li>
+                    <li>Contact system administrator if problem persists</li>
+                </ul>
+                <div class="service-warning-actions">
+                    <button class="retry-btn" onclick="window.dashboardManager.retryPrediction(); this.parentElement.parentElement.parentElement.remove()">
+                        <i class="fas fa-redo"></i> Try Again
+                    </button>
+                    <button class="dismiss-btn" onclick="this.parentElement.parentElement.parentElement.remove()">
+                        <i class="fas fa-times"></i> Dismiss
+                    </button>
+                </div>
+            </div>
+        `;
+
+        // Add styles for the warning overlay
+        overlay.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            backdrop-filter: blur(5px);
+        `;
+
+        document.body.appendChild(overlay);
+        
+        // Auto-remove after 10 seconds
+        setTimeout(() => {
+            if (overlay.parentElement) {
+                overlay.remove();
+            }
+        }, 10000);
     }
 
     displayPredictionResults(data) {
@@ -620,7 +710,7 @@ class DashboardManager {
                 labels: chartData.hours,
                 datasets: [
                     {
-                        label: 'Historical Data',
+                        label: 'Previous 24h',
                         data: chartData.historical,
                         borderColor: '#3b82f6',
                         backgroundColor: 'rgba(59, 130, 246, 0.1)',
@@ -647,7 +737,7 @@ class DashboardManager {
                         fill: false
                     },
                     {
-                        label: 'Predicted Consumption',
+                        label: 'Next 24h',
                         data: chartData.predictions,
                         borderColor: '#10b981',
                         backgroundColor: 'rgba(16, 185, 129, 0.1)',
@@ -674,8 +764,8 @@ class DashboardManager {
                             color: '#e2e8f0',
                             filter: (legendItem, chartData) => {
                                 // Show historical and predicted data, hide confidence bands
-                                return legendItem.text === 'Predicted Consumption' || 
-                                       legendItem.text === 'Historical Data';
+                                return legendItem.text === 'Next 24h' || 
+                                       legendItem.text === 'Previous 24h';
                             }
                         }
                     },
@@ -685,15 +775,15 @@ class DashboardManager {
                                 const datasetIndex = context.datasetIndex;
                                 const value = context.parsed.y;
                                 
-                                if (datasetIndex === 0) { // Historical data
-                                    return `Historical: ${value.toFixed(2)} MWh`;
-                                } else if (datasetIndex === 3) { // Prediction line
+                                if (datasetIndex === 0) { // Previous 24h data
+                                    return `Previous 24h: ${value.toFixed(2)} MWh`;
+                                } else if (datasetIndex === 3) { // Next 24h line
                                     const hourIndex = context.dataIndex;
                                     const minValue = chartData.confidenceMin[hourIndex];
                                     const maxValue = chartData.confidenceMax[hourIndex];
                                     return [
-                                        `Predicted: ${value.toFixed(2)} MWh`,
-                                        `Range: ${minValue?.toFixed(2)} - ${maxValue?.toFixed(2)} MWh`
+                                        `Next 24h: ${value.toFixed(2)} MWh`,
+                                        `Confidence Range: ${minValue?.toFixed(2)} - ${maxValue?.toFixed(2)} MWh`
                                     ];
                                 }
                                 return null;
@@ -840,6 +930,12 @@ class DashboardManager {
         const existingNotifications = document.querySelectorAll(`.notification-${type}`);
         existingNotifications.forEach(notif => notif.remove());
         
+        // For error messages (especially validation errors), show as centered overlay
+        if (type === 'error' && message.length > 100) {
+            this.showCenteredErrorMessage(message);
+            return;
+        }
+        
         // Create notification element
         const notification = document.createElement('div');
         notification.className = `notification notification-${type}`;
@@ -917,6 +1013,45 @@ class DashboardManager {
                 });
             }
         }
+    }
+
+    showCenteredErrorMessage(message) {
+        // Create a centered error overlay for long validation messages
+        const overlay = document.createElement('div');
+        overlay.className = 'error-message-overlay';
+        overlay.innerHTML = `
+            <div class="error-message-content">
+                <div class="error-message-header">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <h3>Validation Error</h3>
+                </div>
+                <div class="error-message-body">
+                    <p>${message}</p>
+                </div>
+                <div class="error-message-actions">
+                    <button class="error-dismiss-btn" onclick="this.parentElement.parentElement.parentElement.remove()">
+                        <i class="fas fa-times"></i> Close
+                    </button>
+                </div>
+            </div>
+        `;
+
+        // Add styles for the error overlay
+        overlay.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            backdrop-filter: blur(5px);
+        `;
+
+        document.body.appendChild(overlay);
     }
 
     loadUserInfo() {
@@ -1050,6 +1185,180 @@ style.textContent = `
         0% { transform: scale(1); }
         50% { transform: scale(1.02); }
         100% { transform: scale(1); }
+    }
+
+    /* Service Warning Overlay Styles */
+    .service-warning-content {
+        background: linear-gradient(135deg, #dc2626, #b91c1c);
+        color: white;
+        padding: 2rem;
+        border-radius: 16px;
+        max-width: 500px;
+        width: 90%;
+        text-align: center;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        animation: warningSlideIn 0.4s ease-out;
+    }
+
+    @keyframes warningSlideIn {
+        from { transform: scale(0.8); opacity: 0; }
+        to { transform: scale(1); opacity: 1; }
+    }
+
+    .service-warning-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        color: #fbbf24;
+        animation: warningPulse 2s ease-in-out infinite;
+    }
+
+    @keyframes warningPulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+    }
+
+    .service-warning-content h3 {
+        font-size: 1.5rem;
+        font-weight: bold;
+        margin-bottom: 1rem;
+    }
+
+    .service-warning-content p {
+        margin-bottom: 1rem;
+        opacity: 0.9;
+    }
+
+    .service-warning-content ul {
+        text-align: left;
+        margin: 1rem 0;
+        padding-left: 1.5rem;
+    }
+
+    .service-warning-content li {
+        margin-bottom: 0.5rem;
+        opacity: 0.9;
+    }
+
+    .service-warning-actions {
+        margin-top: 2rem;
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+    }
+
+    .retry-btn, .dismiss-btn {
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .retry-btn {
+        background: white;
+        color: #dc2626;
+    }
+
+    .retry-btn:hover {
+        background: #f3f4f6;
+        transform: translateY(-2px);
+    }
+
+    .dismiss-btn {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .dismiss-btn:hover {
+        background: rgba(255, 255, 255, 0.3);
+        transform: translateY(-2px);
+    }
+
+    /* Centered Error Message Overlay Styles */
+    .error-message-content {
+        background: #fef2f2;
+        color: #374151;
+        padding: 2rem;
+        border-radius: 16px;
+        max-width: 600px;
+        max-height: 80vh;
+        width: 90%;
+        text-align: center;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+        border: 1px solid #fecaca;
+        animation: errorSlideIn 0.4s ease-out;
+        overflow-y: auto;
+    }
+
+    @keyframes errorSlideIn {
+        from { transform: scale(0.95); opacity: 0; }
+        to { transform: scale(1); opacity: 1; }
+    }
+
+    .error-message-header {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #dc2626;
+    }
+
+    .error-message-header i {
+        font-size: 2rem;
+        color: #f59e0b;
+    }
+
+    .error-message-body {
+        margin-bottom: 2rem;
+        text-align: left;
+        background: #f9fafb;
+        border: 1px solid #e5e7eb;
+        padding: 1.5rem;
+        border-radius: 8px;
+        max-height: 300px;
+        overflow-y: auto;
+        font-family: 'Inter', sans-serif;
+        font-size: 0.9rem;
+        line-height: 1.5;
+        color: #4b5563;
+    }
+
+    .error-message-body p {
+        margin: 0;
+        word-wrap: break-word;
+    }
+
+    .error-message-actions {
+        margin-top: 1.5rem;
+    }
+
+    .error-dismiss-btn {
+        padding: 0.75rem 2rem;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin: 0 auto;
+        background: white;
+        color: #374151;
+    }
+
+    .error-dismiss-btn:hover {
+        background: #f9fafb;
+        border-color: #9ca3af;
+        transform: translateY(-1px);
     }
 `;
 document.head.appendChild(style);

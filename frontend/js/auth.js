@@ -184,7 +184,7 @@ class AuthManager {
     // Carousel functionality
     initializeCarousel() {
         this.currentSlide = 0;
-        this.totalSlides = 5; // EPCG, CANU, CGES, Meteo, CEDIS
+        this.totalSlides = 6; // EPCG, CANU, CGES, Meteo, CEDIS, Tehnopolis
         this.autoSlideInterval = 4000; // 4 seconds
         this.progressInterval = null;
         this.autoSlideTimer = null;
@@ -275,7 +275,7 @@ class AuthManager {
         this.progressBar.style.width = '0%';
         
         setTimeout(() => {
-            this.startProgress();
+            this.startAutoSlide(); // Restart auto-slide instead of just progress
         }, 100);
     }
 

@@ -14,8 +14,23 @@ class Config:
     DATABASE_CONNECTION_STRING = os.environ.get('DATABASE_CONNECTION_STRING')
     DATABASE_NAME = os.environ.get('DATABASE_NAME') or 'energenius'
     
-    # AWS Configuration for API calls
-    AWS_API_ENDPOINT = os.environ.get('AWS_API_ENDPOINT') or 'https://your-app-runner-endpoint.com'
+    # ML API Configuration
+    ML_API_BASE_URL = os.environ.get('ML_API_BASE_URL')
+    ML_API_TIMEOUT = int(os.environ.get('ML_API_TIMEOUT', '30'))
+    
+    # CORS Configuration
+    CORS_ORIGINS = [
+        'http://localhost:3000',      # React development
+        'http://localhost:5173',      # Vite development  
+        'http://localhost:8080',      # Vue development
+        'http://127.0.0.1:3000',      # Alternative localhost
+        'http://127.0.0.1:5173',      # Alternative localhost
+    ]
+    
+    # Rate Limiting Configuration
+    RATELIMIT_STORAGE_URL = os.environ.get('RATELIMIT_STORAGE_URL', 'memory://')
+    RATELIMIT_DEFAULT = "200 per day;50 per hour"
+    RATELIMIT_STRATEGY = "fixed-window"
     
     # Demo users (in production, this would be a database)
     DEMO_USERS = {
