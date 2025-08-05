@@ -37,7 +37,7 @@ body {
     left: -50px;
     width: calc(100% + 50px);
     height: calc(100% + 50px);
-    background-image: 
+    background-image:
         linear-gradient(rgba(59, 130, 246, 0.5) 1px, transparent 1px),
         linear-gradient(90deg, rgba(59, 130, 246, 0.5) 1px, transparent 1px);
     background-size: 50px 50px;
@@ -73,7 +73,7 @@ body {
     padding: 3rem;
     width: 100%;
     max-width: 500px;
-    box-shadow: 
+    box-shadow:
         0 25px 50px -12px rgba(0, 0, 0, 0.4),
         0 0 0 1px rgba(59, 130, 246, 0.1),
         inset 0 1px 0 rgba(255, 255, 255, 0.1);
@@ -464,26 +464,26 @@ body {
         max-width: 550px;
         padding: 4rem;
     }
-    
+
     .login-header h1 {
         font-size: 2.5rem;
     }
-    
+
     .carousel-slide {
         padding: 0 3rem;
     }
-    
+
     .sponsor-logo {
         max-height: 80px;
         max-width: 180px;
     }
-    
+
     .sponsor-logo-fallback {
         width: 70px;
         height: 70px;
         font-size: 1.75rem;
     }
-    
+
     .company-name {
         font-size: 0.875rem;
     }
@@ -493,43 +493,43 @@ body {
     .login-container {
         padding: 1rem;
     }
-    
+
     .login-content {
         padding: 2rem;
     }
-    
+
     .login-header h1 {
         font-size: 1.75rem;
     }
-    
+
     .carousel-slide {
         padding: 0 1rem;
     }
-    
+
     .sponsor-logo {
         max-height: 50px;
         max-width: 120px;
     }
-    
+
     .sponsor-logo-fallback {
         width: 50px;
         height: 50px;
         font-size: 1.25rem;
     }
-    
+
     .carousel-btn {
         width: 35px;
         height: 35px;
     }
-    
+
     .prev-btn {
         left: 0.25rem;
     }
-    
+
     .next-btn {
         right: 0.25rem;
     }
-    
+
     .company-name {
         font-size: 0.75rem;
     }

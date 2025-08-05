@@ -27,14 +27,14 @@ def login():
         data = request.get_json()
         username = data.get('username', '').strip()
         password = data.get('password', '')
-        
+
         # Validate input
         if not username or not password:
             return jsonify({
                 'success': False,
                 'message': 'Username and password are required'
             }), 400
-        
+
         # Validate username format
         is_valid, message = validate_username(username)
         if not is_valid:
@@ -42,7 +42,7 @@ def login():
                 'success': False,
                 'message': message
             }), 400
-        
+
         # Validate password
         is_valid, message = validate_password(password)
         if not is_valid:
@@ -50,15 +50,15 @@ def login():
                 'success': False,
                 'message': message
             }), 400
-        
+
         # Authenticate user
         user = User.authenticate(username, password)
-        
+
         if user:
             # Store user in session
             session['user'] = user.to_dict()
             session.permanent = True
-            
+
             return jsonify({
                 'success': True,
                 'message': 'Login successful',
@@ -70,7 +70,7 @@ def login():
                 'success': False,
                 'message': 'Invalid username or password'
             }), 401
-            
+
     except Exception as e:
         return jsonify({
             'success': False,

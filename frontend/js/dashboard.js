@@ -1,45 +1,45 @@
 // Dashboard JavaScript
-// 
+//
 // TODO: Excel File Format - STRICT VALIDATION REQUIRED
 // =====================================================
-// 
+//
 // Expected Excel structure (EXACT columns required):
 // Row 1 (Header): | Sjutra praznik | Dan u nedelji | Dan u mjesecu | Mjesec | Sat | Temp. min Pg | Temp. max Pg | Temp. sr Pg | Temp. min Nk | Temp. max Nk | Temp. sr Nk | Temp. min Pv | Temp. max Pv | Temp. sr Pv | Temp. min Br | Temp. max Br | Temp. sr Br | Temp. min Ul | Temp. max Ul | Temp. sr Ul | Temp. min Ct | Temp. max Ct | Temp. sr Ct | Prethodna 24h |
 // Rows 2-25 (Data): 24 rows of actual data values
-// 
+//
 // VALIDATION RULES (STRICTLY ENFORCED):
-// 
+//
 // 1. Sjutra praznik (Tomorrow Holiday):
 //    - Can contain 1-2 values OR all 24 values
 //    - If predicting for same day: 1 value
 //    - If predicting for next day: 2 values (repeated for same day)
 //    - Can also have all 24 values filled in
-// 
+//
 // 2. Sat (Hour):
 //    - Can contain ONLY first value OR all 24 values
 //    - When hour switches from 23 to 0, increment day/month based on first values
-// 
+//
 // 3. Dan u mjesecu (Day of Month):
 //    - Can contain ONLY first value OR all values
 //    - Values depend on hour progression
-// 
+//
 // 4. Mjesec (Month):
-//    - Can contain ONLY first value OR all values  
+//    - Can contain ONLY first value OR all values
 //    - Values depend on hour progression
-// 
+//
 // 5. Dan u nedelji (Day of Week):
 //    - Can contain ONLY first value OR all values
 //    - Values depend on hour progression
-// 
+//
 // 6. Temperature columns (18 columns total):
 //    - Can contain 1-2 values per row OR all values
 //    - Values for the SAME DAY must be IDENTICAL
 //    - Columns: min/max/sr for Pg, Nk, Pv, Br, Ul, Ct
-// 
+//
 // 7. Prethodna 24h (Previous 24h consumption):
 //    - MUST contain ALL 24 values (MWh per hour)
 //    - NO missing values allowed
-// 
+//
 // Table dimensions: EXACTLY 25 rows x 24 columns (1 header row + 24 data rows)
 // =============================================================================
 
@@ -50,23 +50,23 @@ class DashboardManager {
         this.uploadedData = null;
         this.predictionResults = null;
         this.chart = null;
-        
+
         // Expected column structure
         this.expectedColumns = [
             'Sjutra praznik',
-            'Dan u nedelji', 
+            'Dan u nedelji',
             'Dan u mjesecu',
             'Mjesec',
             'Sat',
             'Temp. min Pg', 'Temp. max Pg', 'Temp. sr Pg',
-            'Temp. min Nk', 'Temp. max Nk', 'Temp. sr Nk', 
+            'Temp. min Nk', 'Temp. max Nk', 'Temp. sr Nk',
             'Temp. min Pv', 'Temp. max Pv', 'Temp. sr Pv',
             'Temp. min Br', 'Temp. max Br', 'Temp. sr Br',
             'Temp. min Ul', 'Temp. max Ul', 'Temp. sr Ul',
             'Temp. min Ct', 'Temp. max Ct', 'Temp. sr Ct',
             'Prethodna 24h'
         ];
-        
+
         this.initialize();
     }
 
@@ -79,12 +79,12 @@ class DashboardManager {
         try {
             const response = await fetch('/auth/check-session');
             const data = await response.json();
-            
+
             if (!data.authenticated) {
                 window.location.href = '/index.html';
                 return;
             }
-            
+
             this.currentUser = data.user;
             this.loadUserInfo(); // Load user info after authentication completes
         } catch (error) {
@@ -100,13 +100,13 @@ class DashboardManager {
 
         // File upload functionality
         this.initializeFileUpload();
-        
+
         // Prediction controls
         this.initializePredictionControls();
-        
+
         // Chart controls
         this.initializeChartControls();
-        
+
         // Export functionality
         this.initializeExportControls();
     }
@@ -176,7 +176,7 @@ class DashboardManager {
                 chartBtns.forEach(b => b.classList.remove('active'));
                 // Add active class to clicked button
                 btn.classList.add('active');
-                
+
                 const viewType = btn.dataset.view || btn.dataset.chart;
                 if (this.predictionResults) {
                     this.switchView(viewType);
@@ -188,7 +188,7 @@ class DashboardManager {
     switchView(viewType) {
         const chartCanvas = document.getElementById('predictionChart');
         const tableDiv = document.getElementById('predictionTable');
-        
+
         if (viewType === 'table') {
             chartCanvas.style.display = 'none';
             tableDiv.style.display = 'block';
@@ -210,14 +210,14 @@ class DashboardManager {
 
     createPredictionTable(data) {
         const tableDiv = document.getElementById('predictionTable');
-        
+
         // Use actual prediction data from backend
         const hours = data.hours || Array.from({length: 24}, (_, i) => `${i.toString().padStart(2, '0')}:00`);
         const predictions = data.predictions || [];
         const confidenceMin = data.confidenceMin || [];
         const confidenceMax = data.confidenceMax || [];
         const historical = data.historical || [];
-        
+
         // Create table data
         const tableData = hours.map((hour, index) => ({
             hour: hour,
@@ -226,7 +226,7 @@ class DashboardManager {
             confidenceMin: confidenceMin[index] || 0,
             confidenceMax: confidenceMax[index] || 0
         }));
-        
+
         const table = document.createElement('table');
         table.innerHTML = `
             <thead>
@@ -248,7 +248,7 @@ class DashboardManager {
                 `).join('')}
             </tbody>
         `;
-        
+
         tableDiv.innerHTML = '';
         tableDiv.appendChild(table);
     }
@@ -322,7 +322,7 @@ class DashboardManager {
         const statusText = document.getElementById('statusText');
 
         uploadStatus.style.display = 'block';
-        
+
         const formData = new FormData();
         formData.append('file', file);
 
@@ -341,7 +341,7 @@ class DashboardManager {
             if (result.success) {
                 progressFill.style.width = '100%';
                 statusText.textContent = 'Upload complete!';
-                
+
                 setTimeout(() => {
                     uploadStatus.style.display = 'none';
                     this.processUploadedData(result.data);
@@ -353,11 +353,11 @@ class DashboardManager {
             console.error('Upload error:', error);
             statusText.textContent = 'Upload failed. Please try again.';
             statusText.style.color = '#ef4444';
-            
+
             // Show detailed error message as a notification - make sure it's persistent
             console.log('Showing error notification:', error.message);
             this.showNotification(error.message, 'error');
-            
+
             setTimeout(() => {
                 uploadStatus.style.display = 'none';
                 this.removeFile();
@@ -390,7 +390,7 @@ class DashboardManager {
             this.removeFile();
             return;
         }
-        
+
         this.uploadedData = data;
         this.showDataPreview(data);
         this.updateStatistics(data);
@@ -416,7 +416,7 @@ class DashboardManager {
 
     showDataPreview(data) {
         const previewContent = document.getElementById('previewContent');
-        
+
         if (!data || !data.preview || data.preview.length === 0) {
             previewContent.innerHTML = `
                 <div class="no-data">
@@ -453,7 +453,7 @@ class DashboardManager {
             this.expectedColumns.forEach(columnName => {
                 const td = document.createElement('td');
                 const value = row[columnName];
-                
+
                 // Highlight missing required values
                 if ((columnName === 'Prethodna 24h') && (value === null || value === undefined || value === '')) {
                     td.innerHTML = `<span style="color: #ef4444;">MISSING</span>`;
@@ -462,7 +462,7 @@ class DashboardManager {
                 } else {
                     td.textContent = value;
                 }
-                
+
                 tr.appendChild(td);
             });
             tbody.appendChild(tr);
@@ -485,7 +485,7 @@ class DashboardManager {
         //     dateRange: 30,
         //     recordCount: 720
         // }
-        
+
         // For now, just show that data was processed
         console.log('Data statistics updated for uploaded file:', data);
     }
@@ -521,12 +521,12 @@ class DashboardManager {
         // Check ML service health before prediction
         const predictBtn = document.getElementById('predictBtn');
         const originalText = predictBtn.innerHTML;
-        
+
         predictBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Checking service...';
         predictBtn.disabled = true;
 
         const isServiceHealthy = await this.checkMLServiceHealth();
-        
+
         if (!isServiceHealthy) {
             this.showServiceDownWarning();
             predictBtn.innerHTML = originalText;
@@ -558,10 +558,10 @@ class DashboardManager {
                 this.predictionResults = result.data;
                 this.displayPredictionResults(result.data);
                 this.enableExportControls();
-                
+
                 const processingTime = result.data.processingTime || 0;
                 this.showNotification(
-                    `Predictions generated successfully in ${processingTime.toFixed(2)}s using ${modelType.toUpperCase()}!`, 
+                    `Predictions generated successfully in ${processingTime.toFixed(2)}s using ${modelType.toUpperCase()}!`,
                     'success'
                 );
             } else {
@@ -623,7 +623,7 @@ class DashboardManager {
         `;
 
         document.body.appendChild(overlay);
-        
+
         // Auto-remove after 10 seconds
         setTimeout(() => {
             if (overlay.parentElement) {
@@ -638,7 +638,7 @@ class DashboardManager {
 
         // Show chart by default
         this.createChart(data);
-        
+
         // Hide no-results message
         document.getElementById('noResults').style.display = 'none';
         document.getElementById('predictionChart').style.display = 'block';
@@ -648,7 +648,7 @@ class DashboardManager {
         // Calculate statistics from actual prediction data
         const predictions = data.predictions || [];
         const hours = data.hours || Array.from({length: 24}, (_, i) => `${i.toString().padStart(2, '0')}:00`);
-        
+
         if (predictions.length === 0) {
             // No data available
             document.getElementById('avgPredictionConsumption').textContent = '--';
@@ -659,7 +659,7 @@ class DashboardManager {
             document.getElementById('minHour').textContent = '--';
             return;
         }
-        
+
         // Calculate statistics
         const total = predictions.reduce((sum, val) => sum + val, 0);
         const average = total / predictions.length;
@@ -669,19 +669,19 @@ class DashboardManager {
         const minValue = Math.min(...predictions);
         const minIndex = predictions.indexOf(minValue);
         const minHour = hours[minIndex];
-        
+
         // Update UI
-        document.getElementById('avgPredictionConsumption').textContent = 
+        document.getElementById('avgPredictionConsumption').textContent =
             `${average.toFixed(3)} MWh`;
-        document.getElementById('dailyTotalConsumption').textContent = 
+        document.getElementById('dailyTotalConsumption').textContent =
             `${total.toFixed(3)} MWh`;
-        document.getElementById('peakPredictionConsumption').textContent = 
+        document.getElementById('peakPredictionConsumption').textContent =
             `${peakValue.toFixed(3)} MWh`;
-        document.getElementById('peakHour').textContent = 
+        document.getElementById('peakHour').textContent =
             `at ${peakHour}`;
-        document.getElementById('minPredictionConsumption').textContent = 
+        document.getElementById('minPredictionConsumption').textContent =
             `${minValue.toFixed(3)} MWh`;
-        document.getElementById('minHour').textContent = 
+        document.getElementById('minHour').textContent =
             `at ${minHour}`;
     }
 
@@ -689,7 +689,7 @@ class DashboardManager {
 
     createChart(data) {
         const ctx = document.getElementById('predictionChart').getContext('2d');
-        
+
         // Destroy existing chart if it exists
         if (this.chart) {
             this.chart.destroy();
@@ -703,7 +703,7 @@ class DashboardManager {
             confidenceMax: data.confidenceMax || [],
             historical: data.historical || []
         };
-        
+
         this.chart = new Chart(ctx, {
             type: 'line',
             data: {
@@ -764,7 +764,7 @@ class DashboardManager {
                             color: '#e2e8f0',
                             filter: (legendItem, chartData) => {
                                 // Show historical and predicted data, hide confidence bands
-                                return legendItem.text === 'Next 24h' || 
+                                return legendItem.text === 'Next 24h' ||
                                        legendItem.text === 'Previous 24h';
                             }
                         }
@@ -774,7 +774,7 @@ class DashboardManager {
                             label: (context) => {
                                 const datasetIndex = context.datasetIndex;
                                 const value = context.parsed.y;
-                                
+
                                 if (datasetIndex === 0) { // Previous 24h data
                                     return `Previous 24h: ${value.toFixed(2)} MWh`;
                                 } else if (datasetIndex === 3) { // Next 24h line
@@ -860,7 +860,7 @@ class DashboardManager {
                 a.click();
                 window.URL.revokeObjectURL(url);
                 document.body.removeChild(a);
-                
+
                 this.showNotification(`Data exported as ${format.toUpperCase()}`, 'success');
             } else {
                 throw new Error('Export failed');
@@ -875,12 +875,12 @@ class DashboardManager {
         this.uploadedFile = null;
         this.uploadedData = null;
         this.predictionResults = null;
-        
+
         // Reset file input
         document.getElementById('fileInput').value = '';
         document.getElementById('fileInfo').style.display = 'none';
         document.getElementById('uploadStatus').style.display = 'none';
-        
+
         // Reset preview
         document.getElementById('previewContent').innerHTML = `
             <div class="no-data">
@@ -888,7 +888,7 @@ class DashboardManager {
                 <p>Upload a file to preview your data</p>
             </div>
         `;
-        
+
         // Reset statistics
         document.getElementById('avgPredictionConsumption').textContent = '--';
         document.getElementById('dailyTotalConsumption').textContent = '--';
@@ -896,13 +896,13 @@ class DashboardManager {
         document.getElementById('peakHour').textContent = '--';
         document.getElementById('minPredictionConsumption').textContent = '--';
         document.getElementById('minHour').textContent = '--';
-        
+
         // Reset controls
         document.getElementById('predictBtn').disabled = true;
-        
+
         // Reset export button
         document.getElementById('exportCSV').disabled = true;
-        
+
         // Reset chart and table
         if (this.chart) {
             this.chart.destroy();
@@ -911,7 +911,7 @@ class DashboardManager {
         document.getElementById('noResults').style.display = 'flex';
         document.getElementById('predictionChart').style.display = 'none';
         document.getElementById('predictionTable').style.display = 'none';
-        
+
         // Reset view buttons
         document.querySelectorAll('.chart-btn').forEach(btn => {
             btn.classList.remove('active');
@@ -925,24 +925,24 @@ class DashboardManager {
 
     showNotification(message, type = 'info') {
         console.log(`Creating notification: type="${type}", message="${message}"`);
-        
+
         // Remove any existing notifications of the same type
         const existingNotifications = document.querySelectorAll(`.notification-${type}`);
         existingNotifications.forEach(notif => notif.remove());
-        
+
         // For error messages (especially validation errors), show as centered overlay
         if (type === 'error' && message.length > 100) {
             this.showCenteredErrorMessage(message);
             return;
         }
-        
+
         // Create notification element
         const notification = document.createElement('div');
         notification.className = `notification notification-${type}`;
-        
+
         // Force errors to be persistent - extra safety check
         const isPersistent = type === 'error' || type === 'warning';
-        
+
         notification.innerHTML = `
             <div class="notification-content">
                 <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
@@ -950,16 +950,16 @@ class DashboardManager {
             </div>
             ${isPersistent ? '<button class="notification-close" onclick="this.parentElement.remove()" title="Click to dismiss"><i class="fas fa-times"></i></button>' : ''}
         `;
-        
+
         // Add styles - make errors more prominent
-        const backgroundColor = type === 'error' ? 'rgba(239, 68, 68, 0.98)' : 
-                              type === 'success' ? 'rgba(16, 185, 129, 0.95)' : 
+        const backgroundColor = type === 'error' ? 'rgba(239, 68, 68, 0.98)' :
+                              type === 'success' ? 'rgba(16, 185, 129, 0.95)' :
                               'rgba(59, 130, 246, 0.95)';
-        
-        const borderColor = type === 'error' ? 'rgba(239, 68, 68, 0.5)' : 
-                           type === 'success' ? 'rgba(16, 185, 129, 0.3)' : 
+
+        const borderColor = type === 'error' ? 'rgba(239, 68, 68, 0.5)' :
+                           type === 'success' ? 'rgba(16, 185, 129, 0.3)' :
                            'rgba(59, 130, 246, 0.3)';
-        
+
         notification.style.cssText = `
             position: fixed;
             top: 20px;
@@ -981,10 +981,10 @@ class DashboardManager {
             border: 2px solid ${borderColor};
             font-weight: ${type === 'error' ? '500' : '400'};
         `;
-        
+
         document.body.appendChild(notification);
         console.log(`Notification added to DOM. Type: ${type}, Persistent: ${isPersistent}`);
-        
+
         // ONLY auto-remove success and info messages - NEVER errors or warnings
         if (type === 'success' || type === 'info') {
             console.log('Setting auto-removal timer for success/info message');
@@ -1001,7 +1001,7 @@ class DashboardManager {
         } else {
             console.log('Error/warning notification will persist until manually dismissed');
         }
-        
+
         // For persistent notifications, add click handler for close button
         if (isPersistent) {
             const closeBtn = notification.querySelector('.notification-close');
@@ -1072,18 +1072,18 @@ class DashboardManager {
             } else {
                 console.log('userName element not found');
             }
-            
+
             // Update user info section (these elements might not exist in current HTML)
             const userEmail = document.getElementById('userEmail');
             if (userEmail) {
                 userEmail.textContent = this.currentUser.email;
             }
-            
+
             const userRole = document.getElementById('userRole');
             if (userRole) {
                 userRole.textContent = this.currentUser.role.charAt(0).toUpperCase() + this.currentUser.role.slice(1);
             }
-            
+
             const loginTime = document.getElementById('loginTime');
             if (loginTime) {
                 loginTime.textContent = new Date().toLocaleString();
@@ -1108,7 +1108,7 @@ class DashboardManager {
                 // Clear any cached data
                 sessionStorage.clear();
                 localStorage.clear();
-                
+
                 // Redirect to login
                 window.location.href = data.redirect || '/index.html';
             } else {
@@ -1131,25 +1131,25 @@ style.textContent = `
         from { transform: translateX(100%); opacity: 0; }
         to { transform: translateX(0); opacity: 1; }
     }
-    
+
     @keyframes slideOut {
         from { transform: translateX(0); opacity: 1; }
         to { transform: translateX(100%); opacity: 0; }
     }
-    
+
     .notification-content {
         display: flex;
         align-items: flex-start;
         gap: 0.75rem;
         flex: 1;
     }
-    
+
     .notification-message {
         flex: 1;
         line-height: 1.4;
         word-wrap: break-word;
     }
-    
+
     .notification-close {
         background: none;
         border: none;
@@ -1166,21 +1166,21 @@ style.textContent = `
         transition: all 0.2s ease;
         margin-top: 2px;
     }
-    
+
     .notification-close:hover {
         opacity: 1;
         background: rgba(255, 255, 255, 0.2);
         transform: scale(1.1);
     }
-    
+
     .notification-close i {
         font-size: 0.875rem;
     }
-    
+
     .notification-error {
         animation: pulse 0.5s ease-in-out;
     }
-    
+
     @keyframes pulse {
         0% { transform: scale(1); }
         50% { transform: scale(1.02); }

@@ -14,10 +14,10 @@ class AuthManager {
 
         const usernameInput = document.getElementById('username');
         const passwordInput = document.getElementById('password');
-        
+
         usernameInput.addEventListener('blur', () => this.validateUsername(usernameInput.value));
         passwordInput.addEventListener('blur', () => this.validatePassword(passwordInput.value));
-        
+
         usernameInput.addEventListener('input', () => this.clearError('usernameError'));
         passwordInput.addEventListener('input', () => this.clearError('passwordError'));
     }
@@ -26,7 +26,7 @@ class AuthManager {
         try {
             const response = await fetch('/auth/check-session');
             const data = await response.json();
-            
+
             if (data.authenticated) {
                 window.location.href = '/dashboard.html';
             }
@@ -50,7 +50,7 @@ class AuthManager {
     }
 
     validatePassword(password) {
-        
+
         if (!password) {
             this.showError('passwordError', 'Password is required');
             return false;
@@ -80,7 +80,7 @@ class AuthManager {
         alertElement.textContent = message;
         alertElement.className = `alert ${type}`;
         alertElement.classList.remove('hidden');
-        
+
         if (type === 'success') {
             setTimeout(() => {
                 alertElement.classList.add('hidden');
@@ -97,7 +97,7 @@ class AuthManager {
         const loginBtn = document.getElementById('loginBtn');
         const btnText = loginBtn.querySelector('.btn-text');
         const btnLoader = loginBtn.querySelector('.btn-loader');
-        
+
         if (loading) {
             loginBtn.disabled = true;
             loginBtn.classList.add('loading');
@@ -143,7 +143,7 @@ class AuthManager {
 
             if (data.success) {
                 this.showAlert('Login successful! Redirecting...', 'success');
-                
+
                 setTimeout(() => {
                     window.location.href = data.redirect || '/dashboard.html';
                 }, 250);
@@ -161,7 +161,7 @@ class AuthManager {
     togglePasswordVisibility() {
         const passwordInput = document.getElementById('password');
         const toggleIcon = document.querySelector('#togglePassword i');
-        
+
         if (passwordInput.type === 'password') {
             passwordInput.type = 'text';
             toggleIcon.classList.replace('fa-eye', 'fa-eye-slash');
@@ -186,7 +186,7 @@ class AuthManager {
 
         this.prevBtn.addEventListener('click', () => this.previousSlide());
         this.nextBtn.addEventListener('click', () => this.nextSlide());
-        
+
         this.dots.forEach((dot, index) => {
             dot.addEventListener('click', () => this.goToSlide(index));
         });
@@ -228,7 +228,7 @@ class AuthManager {
     startAutoSlide() {
         this.clearTimers();
         this.startProgress();
-        
+
         this.autoSlideTimer = setInterval(() => {
             this.nextSlide();
         }, this.autoSlideInterval);
@@ -242,11 +242,11 @@ class AuthManager {
     startProgress() {
         let progress = 0;
         const increment = 100 / (this.autoSlideInterval / 50); // Update every 50ms
-        
+
         this.progressInterval = setInterval(() => {
             progress += increment;
             this.progressBar.style.width = `${Math.min(progress, 100)}%`;
-            
+
             if (progress >= 100) {
                 clearInterval(this.progressInterval);
             }
@@ -256,7 +256,7 @@ class AuthManager {
     resetProgress() {
         this.clearTimers();
         this.progressBar.style.width = '0%';
-        
+
         setTimeout(() => {
             this.startAutoSlide();
         }, 100);
@@ -282,11 +282,11 @@ document.addEventListener('DOMContentLoaded', () => {
     function createSparkEffect() {
         const loginBtn = document.getElementById('loginBtn');
         if (!loginBtn) return;
-        
+
         const buttonRect = loginBtn.getBoundingClientRect();
         const buttonCenterX = buttonRect.left + buttonRect.width / 2 + 50;
         const buttonCenterY = buttonRect.top + buttonRect.height / 2 - 90;
-        
+
         const sparks = document.createElement('div');
         sparks.className = 'electric-sparks';
         sparks.style.cssText = `
@@ -299,7 +299,7 @@ document.addEventListener('DOMContentLoaded', () => {
             z-index: 9999;
             transform: translate(-50%, -50%);
         `;
-        
+
         for (let i = 0; i < 12; i++) {
             const spark = document.createElement('div');
             spark.style.cssText = `
@@ -311,15 +311,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 box-shadow: 0 0 10px #3b82f6;
                 animation: spark-${i} 0.8s ease-out forwards;
             `;
-            
+
             const angle = (360 / 12) * i;
             const distance = 50;
             const x = Math.cos(angle * Math.PI / 180) * distance;
             const y = Math.sin(angle * Math.PI / 180) * distance;
-            
+
             spark.style.setProperty('--end-x', `${x}px`);
             spark.style.setProperty('--end-y', `${y}px`);
-            
+
             const style = document.createElement('style');
             style.textContent = `
                 @keyframes spark-${i} {
@@ -334,17 +334,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             `;
             document.head.appendChild(style);
-            
+
             sparks.appendChild(spark);
         }
-        
+
         document.body.appendChild(sparks);
-        
+
         setTimeout(() => {
             document.body.removeChild(sparks);
         }, 1000);
     }
-    
+
     const originalShowAlert = window.authManager?.showAlert;
     if (window.authManager) {
         window.authManager.showAlert = function(message, type = 'error') {
