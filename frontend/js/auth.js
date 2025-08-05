@@ -1,4 +1,3 @@
-// Authentication JavaScript
 class AuthManager {
     constructor() {
         this.initializeEventListeners();
@@ -7,22 +6,18 @@ class AuthManager {
     }
 
     initializeEventListeners() {
-        // Form submission
         const loginForm = document.getElementById('loginForm');
         loginForm.addEventListener('submit', this.handleLogin.bind(this));
 
-        // Password toggle
         const togglePassword = document.getElementById('togglePassword');
         togglePassword.addEventListener('click', this.togglePasswordVisibility.bind(this));
 
-        // Real-time validation
         const usernameInput = document.getElementById('username');
         const passwordInput = document.getElementById('password');
         
         usernameInput.addEventListener('blur', () => this.validateUsername(usernameInput.value));
         passwordInput.addEventListener('blur', () => this.validatePassword(passwordInput.value));
         
-        // Clear errors on input
         usernameInput.addEventListener('input', () => this.clearError('usernameError'));
         passwordInput.addEventListener('input', () => this.clearError('passwordError'));
     }
@@ -41,8 +36,7 @@ class AuthManager {
     }
 
     validateUsername(username) {
-        const errorElement = document.getElementById('usernameError');
-        
+
         if (!username) {
             this.showError('usernameError', 'Username is required');
             return false;
@@ -56,7 +50,6 @@ class AuthManager {
     }
 
     validatePassword(password) {
-        const errorElement = document.getElementById('passwordError');
         
         if (!password) {
             this.showError('passwordError', 'Password is required');
@@ -88,7 +81,6 @@ class AuthManager {
         alertElement.className = `alert ${type}`;
         alertElement.classList.remove('hidden');
         
-        // Auto hide success messages
         if (type === 'success') {
             setTimeout(() => {
                 alertElement.classList.add('hidden');
@@ -126,7 +118,6 @@ class AuthManager {
         const username = document.getElementById('username').value.trim();
         const password = document.getElementById('password').value;
 
-        // Validate inputs
         const isUsernameValid = this.validateUsername(username);
         const isPasswordValid = this.validatePassword(password);
 
@@ -153,10 +144,9 @@ class AuthManager {
             if (data.success) {
                 this.showAlert('Login successful! Redirecting...', 'success');
                 
-                // Small delay to show success message
                 setTimeout(() => {
                     window.location.href = data.redirect || '/dashboard.html';
-                }, 1000);
+                }, 250);
             } else {
                 this.showAlert(data.message || 'Login failed. Please try again.');
             }
@@ -181,22 +171,19 @@ class AuthManager {
         }
     }
 
-    // Carousel functionality
     initializeCarousel() {
         this.currentSlide = 0;
         this.totalSlides = 6; // EPCG, CANU, CGES, Meteo, CEDIS, Tehnopolis
-        this.autoSlideInterval = 4000; // 4 seconds
+        this.autoSlideInterval = 3000;
         this.progressInterval = null;
         this.autoSlideTimer = null;
 
-        // Get DOM elements
         this.carouselTrack = document.getElementById('carouselTrack');
         this.progressBar = document.getElementById('progressBar');
         this.dots = document.querySelectorAll('.dot');
         this.prevBtn = document.getElementById('prevBtn');
         this.nextBtn = document.getElementById('nextBtn');
 
-        // Add event listeners
         this.prevBtn.addEventListener('click', () => this.previousSlide());
         this.nextBtn.addEventListener('click', () => this.nextSlide());
         
@@ -204,10 +191,8 @@ class AuthManager {
             dot.addEventListener('click', () => this.goToSlide(index));
         });
 
-        // Start auto-slide
         this.startAutoSlide();
 
-        // Pause on hover
         const carouselContainer = document.querySelector('.carousel-container');
         carouselContainer.addEventListener('mouseenter', () => this.pauseAutoSlide());
         carouselContainer.addEventListener('mouseleave', () => this.startAutoSlide());
@@ -232,11 +217,9 @@ class AuthManager {
     }
 
     updateCarousel() {
-        // Move carousel
         const translateX = -this.currentSlide * 100;
         this.carouselTrack.style.transform = `translateX(${translateX}%)`;
 
-        // Update dots
         this.dots.forEach((dot, index) => {
             dot.classList.toggle('active', index === this.currentSlide);
         });
@@ -275,7 +258,7 @@ class AuthManager {
         this.progressBar.style.width = '0%';
         
         setTimeout(() => {
-            this.startAutoSlide(); // Restart auto-slide instead of just progress
+            this.startAutoSlide();
         }, 100);
     }
 
@@ -291,21 +274,25 @@ class AuthManager {
     }
 }
 
-// Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     window.authManager = new AuthManager();
 });
 
-// Add some electric effects
 document.addEventListener('DOMContentLoaded', () => {
-    // Electric spark effect on successful login
     function createSparkEffect() {
+        const loginBtn = document.getElementById('loginBtn');
+        if (!loginBtn) return;
+        
+        const buttonRect = loginBtn.getBoundingClientRect();
+        const buttonCenterX = buttonRect.left + buttonRect.width / 2 + 50;
+        const buttonCenterY = buttonRect.top + buttonRect.height / 2 - 90;
+        
         const sparks = document.createElement('div');
         sparks.className = 'electric-sparks';
         sparks.style.cssText = `
             position: fixed;
-            top: 50%;
-            left: 50%;
+            top: ${buttonCenterY}px;
+            left: ${buttonCenterX}px;
             width: 100px;
             height: 100px;
             pointer-events: none;
@@ -333,7 +320,6 @@ document.addEventListener('DOMContentLoaded', () => {
             spark.style.setProperty('--end-x', `${x}px`);
             spark.style.setProperty('--end-y', `${y}px`);
             
-            // Create keyframes for this spark
             const style = document.createElement('style');
             style.textContent = `
                 @keyframes spark-${i} {
@@ -359,7 +345,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 1000);
     }
     
-    // Add to successful login
     const originalShowAlert = window.authManager?.showAlert;
     if (window.authManager) {
         window.authManager.showAlert = function(message, type = 'error') {
