@@ -1,48 +1,3 @@
-// Dashboard JavaScript
-//
-// TODO: Excel File Format - STRICT VALIDATION REQUIRED
-// =====================================================
-//
-// Expected Excel structure (EXACT columns required):
-// Row 1 (Header): | Sjutra praznik | Dan u nedelji | Dan u mjesecu | Mjesec | Sat | Temp. min Pg | Temp. max Pg | Temp. sr Pg | Temp. min Nk | Temp. max Nk | Temp. sr Nk | Temp. min Pv | Temp. max Pv | Temp. sr Pv | Temp. min Br | Temp. max Br | Temp. sr Br | Temp. min Ul | Temp. max Ul | Temp. sr Ul | Temp. min Ct | Temp. max Ct | Temp. sr Ct | Prethodna 24h |
-// Rows 2-25 (Data): 24 rows of actual data values
-//
-// VALIDATION RULES (STRICTLY ENFORCED):
-//
-// 1. Sjutra praznik (Tomorrow Holiday):
-//    - Can contain 1-2 values OR all 24 values
-//    - If predicting for same day: 1 value
-//    - If predicting for next day: 2 values (repeated for same day)
-//    - Can also have all 24 values filled in
-//
-// 2. Sat (Hour):
-//    - Can contain ONLY first value OR all 24 values
-//    - When hour switches from 23 to 0, increment day/month based on first values
-//
-// 3. Dan u mjesecu (Day of Month):
-//    - Can contain ONLY first value OR all values
-//    - Values depend on hour progression
-//
-// 4. Mjesec (Month):
-//    - Can contain ONLY first value OR all values
-//    - Values depend on hour progression
-//
-// 5. Dan u nedelji (Day of Week):
-//    - Can contain ONLY first value OR all values
-//    - Values depend on hour progression
-//
-// 6. Temperature columns (18 columns total):
-//    - Can contain 1-2 values per row OR all values
-//    - Values for the SAME DAY must be IDENTICAL
-//    - Columns: min/max/sr for Pg, Nk, Pv, Br, Ul, Ct
-//
-// 7. Prethodna 24h (Previous 24h consumption):
-//    - MUST contain ALL 24 values (MWh per hour)
-//    - NO missing values allowed
-//
-// Table dimensions: EXACTLY 25 rows x 24 columns (1 header row + 24 data rows)
-// =============================================================================
-
 class DashboardManager {
     constructor() {
         this.currentUser = null;
@@ -51,7 +6,6 @@ class DashboardManager {
         this.predictionResults = null;
         this.chart = null;
 
-        // Expected column structure
         this.expectedColumns = [
             'Sjutra praznik',
             'Dan u nedelji',
@@ -94,20 +48,16 @@ class DashboardManager {
     }
 
     initializeEventListeners() {
-        // Logout functionality
+
         const logoutBtn = document.getElementById('logoutBtn');
         logoutBtn.addEventListener('click', this.handleLogout.bind(this));
 
-        // File upload functionality
         this.initializeFileUpload();
 
-        // Prediction controls
         this.initializePredictionControls();
 
-        // Chart controls
         this.initializeChartControls();
 
-        // Export functionality
         this.initializeExportControls();
     }
 
@@ -117,7 +67,6 @@ class DashboardManager {
         const browseBtn = document.getElementById('browseBtn');
         const removeFileBtn = document.getElementById('removeFileBtn');
 
-        // Drag and drop events
         uploadArea.addEventListener('dragover', (e) => {
             e.preventDefault();
             uploadArea.classList.add('drag-over');
@@ -137,7 +86,6 @@ class DashboardManager {
             }
         });
 
-        // Click to upload
         uploadArea.addEventListener('click', () => {
             if (!this.uploadedFile) {
                 fileInput.click();
@@ -155,7 +103,6 @@ class DashboardManager {
             }
         });
 
-        // Remove file
         removeFileBtn.addEventListener('click', () => {
             this.removeFile();
         });
@@ -172,9 +119,7 @@ class DashboardManager {
         const chartBtns = document.querySelectorAll('.chart-btn');
         chartBtns.forEach(btn => {
             btn.addEventListener('click', () => {
-                // Remove active class from all buttons
                 chartBtns.forEach(b => b.classList.remove('active'));
-                // Add active class to clicked button
                 btn.classList.add('active');
 
                 const viewType = btn.dataset.view || btn.dataset.chart;
@@ -194,14 +139,12 @@ class DashboardManager {
             tableDiv.style.display = 'block';
             this.createPredictionTable(this.predictionResults);
         } else {
-            // Ensure we destroy any existing chart first
             if (this.chart) {
                 this.chart.destroy();
                 this.chart = null;
             }
             tableDiv.style.display = 'none';
             chartCanvas.style.display = 'block';
-            // Force canvas to reset and recreate chart
             setTimeout(() => {
                 this.createChart(this.predictionResults);
             }, 50);
@@ -211,14 +154,12 @@ class DashboardManager {
     createPredictionTable(data) {
         const tableDiv = document.getElementById('predictionTable');
 
-        // Use actual prediction data from backend
         const hours = data.hours || Array.from({length: 24}, (_, i) => `${i.toString().padStart(2, '0')}:00`);
         const predictions = data.predictions || [];
         const confidenceMin = data.confidenceMin || [];
         const confidenceMax = data.confidenceMax || [];
         const historical = data.historical || [];
 
-        // Create table data
         const tableData = hours.map((hour, index) => ({
             hour: hour,
             historical: historical[index] || 0,
@@ -253,11 +194,6 @@ class DashboardManager {
         tableDiv.appendChild(table);
     }
 
-    loadUserInfo() {
-        const userName = document.getElementById('userName');
-        userName.innerHTML = `<i class="fas fa-user"></i> ${this.currentUser.username}`;
-    }
-
     initializeExportControls() {
         document.getElementById('exportCSV').addEventListener('click', () => {
             this.exportData('csv');
@@ -265,7 +201,6 @@ class DashboardManager {
     }
 
     handleFileSelection(file) {
-        // Validate file
         if (!this.validateFile(file)) {
             return;
         }
@@ -292,7 +227,6 @@ class DashboardManager {
             return false;
         }
 
-        // Show strict format requirements
         this.showNotification('Validating Excel structure... File must have exactly 25 rows × 24 columns (1 header + 24 data rows)', 'info');
 
         return true;
@@ -327,10 +261,8 @@ class DashboardManager {
         formData.append('file', file);
 
         try {
-            // Simulate upload progress
             this.simulateProgress(progressFill, statusText);
 
-            // Upload to backend
             const response = await fetch('/api/upload', {
                 method: 'POST',
                 body: formData
@@ -354,8 +286,6 @@ class DashboardManager {
             statusText.textContent = 'Upload failed. Please try again.';
             statusText.style.color = '#ef4444';
 
-            // Show detailed error message as a notification - make sure it's persistent
-            console.log('Showing error notification:', error.message);
             this.showNotification(error.message, 'error');
 
             setTimeout(() => {
@@ -383,8 +313,6 @@ class DashboardManager {
     }
 
     processUploadedData(data) {
-        // Backend has already validated the data, so trust the backend validation
-        // Check if data has the expected structure from backend
         if (!data || !data.preview || !Array.isArray(data.preview)) {
             this.showNotification('Invalid data structure received from server', 'error');
             this.removeFile();
@@ -393,25 +321,7 @@ class DashboardManager {
 
         this.uploadedData = data;
         this.showDataPreview(data);
-        this.updateStatistics(data);
         this.enablePredictionControls();
-        // Remove the automatic success notification - let user focus on the data
-    }
-
-    // This entire method is now redundant since the backend handles all validation and data filling.
-    // Kept here for documentation purposes.
-    validateExcelStructure(data) {
-        return { isValid: true, errors: [] };
-    }
-
-    // This method is also redundant.
-    validateDataPatterns(rows) {
-        return { errors: [] };
-    }
-
-    // This method is also redundant.
-    validateSameDayTemperatures(rows, columnName) {
-        return { isValid: true };
     }
 
     showDataPreview(data) {
@@ -427,13 +337,11 @@ class DashboardManager {
             return;
         }
 
-        // Create table with validation status indicators
         const table = document.createElement('table');
         table.className = 'preview-table';
         const thead = document.createElement('thead');
         const tbody = document.createElement('tbody');
 
-        // Headers with validation indicators
         const headerRow = document.createElement('tr');
         this.expectedColumns.forEach(columnName => {
             const th = document.createElement('th');
@@ -447,14 +355,12 @@ class DashboardManager {
         });
         thead.appendChild(headerRow);
 
-        // Data rows (show all 24 rows)
         data.preview.forEach((row, index) => {
             const tr = document.createElement('tr');
             this.expectedColumns.forEach(columnName => {
                 const td = document.createElement('td');
                 const value = row[columnName];
 
-                // Highlight missing required values
                 if ((columnName === 'Prethodna 24h') && (value === null || value === undefined || value === '')) {
                     td.innerHTML = `<span style="color: #ef4444;">MISSING</span>`;
                 } else if (value === null || value === undefined || value === '') {
@@ -473,21 +379,7 @@ class DashboardManager {
         previewContent.innerHTML = '';
         previewContent.appendChild(table);
 
-        // No longer showing validation summary - let the notification handle success messages
-    }
 
-    updateStatistics(data) {
-        // TODO: When implementing with real uploaded data, extract basic statistics
-        // Expected data structure:
-        // data.statistics = {
-        //     avgConsumption: 1250.5,
-        //     peakConsumption: 1850.2,
-        //     dateRange: 30,
-        //     recordCount: 720
-        // }
-
-        // For now, just show that data was processed
-        console.log('Data statistics updated for uploaded file:', data);
     }
 
     enablePredictionControls() {
@@ -496,8 +388,6 @@ class DashboardManager {
     }
 
     retryPrediction() {
-        // Automatically trigger prediction generation when user clicks "Try Again"
-        console.log('Retrying prediction after service warning...');
         this.generatePredictions();
     }
 
@@ -518,7 +408,6 @@ class DashboardManager {
             return;
         }
 
-        // Check ML service health before prediction
         const predictBtn = document.getElementById('predictBtn');
         const originalText = predictBtn.innerHTML;
 
@@ -581,7 +470,6 @@ class DashboardManager {
     }
 
     showServiceDownWarning() {
-        // Create a prominent warning overlay
         const overlay = document.createElement('div');
         overlay.className = 'service-warning-overlay';
         overlay.innerHTML = `
@@ -607,7 +495,6 @@ class DashboardManager {
             </div>
         `;
 
-        // Add styles for the warning overlay
         overlay.style.cssText = `
             position: fixed;
             top: 0;
@@ -624,33 +511,27 @@ class DashboardManager {
 
         document.body.appendChild(overlay);
 
-        // Auto-remove after 10 seconds
         setTimeout(() => {
             if (overlay.parentElement) {
                 overlay.remove();
             }
-        }, 10000);
+        }, 7500);
     }
 
     displayPredictionResults(data) {
-        // Update prediction statistics
         this.updatePredictionStatistics(data);
 
-        // Show chart by default
         this.createChart(data);
 
-        // Hide no-results message
         document.getElementById('noResults').style.display = 'none';
         document.getElementById('predictionChart').style.display = 'block';
     }
 
     updatePredictionStatistics(data) {
-        // Calculate statistics from actual prediction data
         const predictions = data.predictions || [];
         const hours = data.hours || Array.from({length: 24}, (_, i) => `${i.toString().padStart(2, '0')}:00`);
 
         if (predictions.length === 0) {
-            // No data available
             document.getElementById('avgPredictionConsumption').textContent = '--';
             document.getElementById('dailyTotalConsumption').textContent = '--';
             document.getElementById('peakPredictionConsumption').textContent = '--';
@@ -660,7 +541,6 @@ class DashboardManager {
             return;
         }
 
-        // Calculate statistics
         const total = predictions.reduce((sum, val) => sum + val, 0);
         const average = total / predictions.length;
         const peakValue = Math.max(...predictions);
@@ -670,7 +550,6 @@ class DashboardManager {
         const minIndex = predictions.indexOf(minValue);
         const minHour = hours[minIndex];
 
-        // Update UI
         document.getElementById('avgPredictionConsumption').textContent =
             `${average.toFixed(3)} MWh`;
         document.getElementById('dailyTotalConsumption').textContent =
@@ -690,12 +569,10 @@ class DashboardManager {
     createChart(data) {
         const ctx = document.getElementById('predictionChart').getContext('2d');
 
-        // Destroy existing chart if it exists
         if (this.chart) {
             this.chart.destroy();
         }
 
-        // Use actual prediction data from backend
         const chartData = {
             hours: data.hours || Array.from({length: 24}, (_, i) => `${i.toString().padStart(2, '0')}:00`),
             predictions: data.predictions || [],
@@ -763,7 +640,7 @@ class DashboardManager {
                         labels: {
                             color: '#e2e8f0',
                             filter: (legendItem, chartData) => {
-                                // Show historical and predicted data, hide confidence bands
+
                                 return legendItem.text === 'Next 24h' ||
                                        legendItem.text === 'Previous 24h';
                             }
@@ -775,9 +652,9 @@ class DashboardManager {
                                 const datasetIndex = context.datasetIndex;
                                 const value = context.parsed.y;
 
-                                if (datasetIndex === 0) { // Previous 24h data
+                                if (datasetIndex === 0) {
                                     return `Previous 24h: ${value.toFixed(2)} MWh`;
-                                } else if (datasetIndex === 3) { // Next 24h line
+                                } else if (datasetIndex === 3) {
                                     const hourIndex = context.dataIndex;
                                     const minValue = chartData.confidenceMin[hourIndex];
                                     const maxValue = chartData.confidenceMax[hourIndex];
@@ -855,7 +732,7 @@ class DashboardManager {
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `predictions.${format}`;
+                a.download = `predikcija.${format}`;
                 document.body.appendChild(a);
                 a.click();
                 window.URL.revokeObjectURL(url);
@@ -876,12 +753,10 @@ class DashboardManager {
         this.uploadedData = null;
         this.predictionResults = null;
 
-        // Reset file input
         document.getElementById('fileInput').value = '';
         document.getElementById('fileInfo').style.display = 'none';
         document.getElementById('uploadStatus').style.display = 'none';
 
-        // Reset preview
         document.getElementById('previewContent').innerHTML = `
             <div class="no-data">
                 <i class="fas fa-table"></i>
@@ -889,7 +764,6 @@ class DashboardManager {
             </div>
         `;
 
-        // Reset statistics
         document.getElementById('avgPredictionConsumption').textContent = '--';
         document.getElementById('dailyTotalConsumption').textContent = '--';
         document.getElementById('peakPredictionConsumption').textContent = '--';
@@ -897,13 +771,10 @@ class DashboardManager {
         document.getElementById('minPredictionConsumption').textContent = '--';
         document.getElementById('minHour').textContent = '--';
 
-        // Reset controls
         document.getElementById('predictBtn').disabled = true;
 
-        // Reset export button
         document.getElementById('exportCSV').disabled = true;
 
-        // Reset chart and table
         if (this.chart) {
             this.chart.destroy();
             this.chart = null;
@@ -912,11 +783,9 @@ class DashboardManager {
         document.getElementById('predictionChart').style.display = 'none';
         document.getElementById('predictionTable').style.display = 'none';
 
-        // Reset view buttons
         document.querySelectorAll('.chart-btn').forEach(btn => {
             btn.classList.remove('active');
         });
-        // Set chart view as default active
         const chartBtn = document.querySelector('.chart-btn[data-chart="line"]') || document.querySelector('.chart-btn:first-child');
         if (chartBtn) {
             chartBtn.classList.add('active');
@@ -924,23 +793,19 @@ class DashboardManager {
     }
 
     showNotification(message, type = 'info') {
-        console.log(`Creating notification: type="${type}", message="${message}"`);
 
-        // Remove any existing notifications of the same type
         const existingNotifications = document.querySelectorAll(`.notification-${type}`);
         existingNotifications.forEach(notif => notif.remove());
 
-        // For error messages (especially validation errors), show as centered overlay
         if (type === 'error' && message.length > 100) {
             this.showCenteredErrorMessage(message);
             return;
         }
 
-        // Create notification element
         const notification = document.createElement('div');
         notification.className = `notification notification-${type}`;
 
-        // Force errors to be persistent - extra safety check
+
         const isPersistent = type === 'error' || type === 'warning';
 
         notification.innerHTML = `
@@ -951,7 +816,6 @@ class DashboardManager {
             ${isPersistent ? '<button class="notification-close" onclick="this.parentElement.remove()" title="Click to dismiss"><i class="fas fa-times"></i></button>' : ''}
         `;
 
-        // Add styles - make errors more prominent
         const backgroundColor = type === 'error' ? 'rgba(239, 68, 68, 0.98)' :
                               type === 'success' ? 'rgba(16, 185, 129, 0.95)' :
                               'rgba(59, 130, 246, 0.95)';
@@ -983,11 +847,8 @@ class DashboardManager {
         `;
 
         document.body.appendChild(notification);
-        console.log(`Notification added to DOM. Type: ${type}, Persistent: ${isPersistent}`);
 
-        // ONLY auto-remove success and info messages - NEVER errors or warnings
         if (type === 'success' || type === 'info') {
-            console.log('Setting auto-removal timer for success/info message');
             setTimeout(() => {
                 if (notification.parentElement) {
                     notification.style.animation = 'slideOut 0.3s ease';
@@ -999,16 +860,13 @@ class DashboardManager {
                 }
             }, 3000);
         } else {
-            console.log('Error/warning notification will persist until manually dismissed');
         }
 
-        // For persistent notifications, add click handler for close button
         if (isPersistent) {
             const closeBtn = notification.querySelector('.notification-close');
             if (closeBtn) {
                 closeBtn.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    console.log('Manually closing notification');
                     notification.remove();
                 });
             }
@@ -1016,7 +874,6 @@ class DashboardManager {
     }
 
     showCenteredErrorMessage(message) {
-        // Create a centered error overlay for long validation messages
         const overlay = document.createElement('div');
         overlay.className = 'error-message-overlay';
         overlay.innerHTML = `
@@ -1036,7 +893,6 @@ class DashboardManager {
             </div>
         `;
 
-        // Add styles for the error overlay
         overlay.style.cssText = `
             position: fixed;
             top: 0;
@@ -1056,40 +912,17 @@ class DashboardManager {
 
     loadUserInfo() {
         if (!this.currentUser) {
-            console.log('No user data available');
             return;
         }
 
-        // console.log('Loading user info for:', this.currentUser);
-
         try {
-            // Update navigation - show username or name
             const userName = document.getElementById('userName');
             if (userName) {
                 const displayName = this.currentUser.name || this.currentUser.username || 'User';
                 userName.textContent = displayName;
-                // console.log('Updated userName element with:', displayName);
-            } else {
-                console.log('userName element not found');
-            }
-
-            // Update user info section (these elements might not exist in current HTML)
-            const userEmail = document.getElementById('userEmail');
-            if (userEmail) {
-                userEmail.textContent = this.currentUser.email;
-            }
-
-            const userRole = document.getElementById('userRole');
-            if (userRole) {
-                userRole.textContent = this.currentUser.role.charAt(0).toUpperCase() + this.currentUser.role.slice(1);
-            }
-
-            const loginTime = document.getElementById('loginTime');
-            if (loginTime) {
-                loginTime.textContent = new Date().toLocaleString();
             }
         } catch (error) {
-            console.error('Error loading user info:', error);
+            console.log('Error loading user info:', error);
         }
     }
 
@@ -1105,26 +938,22 @@ class DashboardManager {
             const data = await response.json();
 
             if (data.success) {
-                // Clear any cached data
                 sessionStorage.clear();
                 localStorage.clear();
 
-                // Redirect to login
                 window.location.href = data.redirect || '/index.html';
             } else {
                 console.error('Logout failed:', data.message);
-                // Force redirect anyway
                 window.location.href = '/index.html';
             }
         } catch (error) {
             console.error('Logout error:', error);
-            // Force redirect on error
             window.location.href = '/index.html';
         }
     }
 }
 
-// Add notification animations and styles to document
+
 const style = document.createElement('style');
 style.textContent = `
     @keyframes slideIn {
@@ -1187,7 +1016,6 @@ style.textContent = `
         100% { transform: scale(1); }
     }
 
-    /* Service Warning Overlay Styles */
     .service-warning-content {
         background: linear-gradient(135deg, #dc2626, #b91c1c);
         color: white;
@@ -1279,7 +1107,6 @@ style.textContent = `
         transform: translateY(-2px);
     }
 
-    /* Centered Error Message Overlay Styles */
     .error-message-content {
         background: #fef2f2;
         color: #374151;
@@ -1363,12 +1190,10 @@ style.textContent = `
 `;
 document.head.appendChild(style);
 
-// Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     window.dashboardManager = new DashboardManager();
 });
-
-// Prevent back button after logout
+// the next line is to prevent displaying the page from cache
 window.addEventListener('pageshow', function(event) {
     if (event.persisted) {
         window.location.reload();

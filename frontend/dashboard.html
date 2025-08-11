@@ -18,7 +18,6 @@
   </head>
   <body>
     <div class="dashboard-container">
-      <!-- Navigation -->
       <nav class="navbar">
         <div class="nav-brand">
           <i class="fas fa-bolt"></i>
@@ -34,17 +33,13 @@
         </div>
       </nav>
 
-      <!-- Main Content -->
       <main class="main-content">
-        <!-- Welcome Header -->
         <div class="welcome-header">
           <h1>Electricity Consumption Prediction</h1>
           <p>Upload your data and get AI-powered consumption predictions</p>
         </div>
 
-        <!-- Top Section: Upload and Controls -->
         <div class="dashboard-top-grid">
-          <!-- File Upload Section -->
           <div class="dashboard-card upload-section">
             <div class="card-header">
               <h2><i class="fas fa-upload"></i> Data Upload</h2>
@@ -62,11 +57,8 @@
                   </button>
                 </p>
                 <div class="upload-info">
-                  <small
-                    >Required: Excel file with exactly 25 rows × 24 columns (1
-                    header + 24 data rows)</small
-                  >
-                  <small>Supported formats: .xlsx, .xls | Max size: 10MB</small>
+                  <small>Required: Excel file with input data</small>
+                  <small>Supported formats: .xlsx, .xls</small>
                 </div>
               </div>
               <input type="file" id="fileInput" accept=".xlsx,.xls" hidden />
@@ -95,7 +87,6 @@
             </div>
           </div>
 
-          <!-- Prediction Controls -->
           <div class="dashboard-card controls-section">
             <div class="card-header">
               <h2><i class="fas fa-cogs"></i> Prediction Settings</h2>
@@ -127,7 +118,6 @@
           </div>
         </div>
 
-        <!-- Full Width Preview Section -->
         <div class="dashboard-card preview-section full-width">
           <div class="card-header">
             <h2><i class="fas fa-table"></i> Data Preview</h2>
@@ -142,9 +132,7 @@
           </div>
         </div>
 
-        <!-- Dashboard Grid -->
         <div class="dashboard-grid">
-          <!-- Results Visualization -->
           <div class="dashboard-card visualization-section">
             <div class="card-header">
               <h2><i class="fas fa-chart-line"></i> Prediction Results</h2>
@@ -172,7 +160,6 @@
             </div>
           </div>
 
-          <!-- Statistics and Export Panel -->
           <div class="dashboard-card stats-export-section">
             <div class="card-header">
               <h2><i class="fas fa-analytics"></i> Prediction Statistics</h2>
@@ -228,7 +215,6 @@
               </div>
             </div>
 
-            <!-- Export Section Below Statistics -->
             <div class="export-section-compact">
               <div class="export-header">
                 <h3><i class="fas fa-download"></i> Export Results</h3>
