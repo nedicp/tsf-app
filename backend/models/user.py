@@ -2,7 +2,6 @@ import bcrypt
 from datetime import datetime
 from bson.objectid import ObjectId
 from backend.utils.database import db
-import re
 
 class User:
     def __init__(self, username, email, name, role, created_at=None, _id=None):
@@ -13,50 +12,17 @@ class User:
         self.created_at = created_at or datetime.utcnow()
         self._id = _id
 
-    def save(self):
-        """Save user to database"""
-        try:
-            users_collection = db.get_collection('users')
-
-            user_data = {
-                'username': self.username,
-                'email': self.email,
-                'name': self.name,
-                'role': self.role,
-                'created_at': self.created_at
-            }
-
-            if self._id:
-                # Update existing user
-                result = users_collection.update_one(
-                    {'_id': ObjectId(self._id)},
-                    {'$set': user_data}
-                )
-                return result.modified_count > 0
-            else:
-                # Create new user
-                result = users_collection.insert_one(user_data)
-                self._id = str(result.inserted_id)
-                return True
-
-        except Exception as e:
-            print(f"Error saving user: {e}")
-            return False
-
     @staticmethod
     def create_user(username, email, name, password, role='user'):
         """Create a new user with hashed password"""
         try:
             users_collection = db.get_collection('users')
 
-            # Check if user already exists
             if users_collection.find_one({'$or': [{'username': username}, {'email': email}]}):
                 return None, "User with this username or email already exists"
 
-            # Hash the password
             hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
 
-            # Create user document
             user_data = {
                 'username': username,
                 'email': email,
@@ -66,10 +32,8 @@ class User:
                 'created_at': datetime.utcnow()
             }
 
-            # Insert into database
             result = users_collection.insert_one(user_data)
 
-            # Return user object (without password)
             user = User(username, email, name, role, user_data['created_at'], str(result.inserted_id))
             return user, "User created successfully"
 
@@ -83,13 +47,11 @@ class User:
         try:
             users_collection = db.get_collection('users')
 
-            # Find user by username
             user_doc = users_collection.find_one({'username': username})
 
             if not user_doc:
                 return None
 
-            # Check password
             if bcrypt.checkpw(password.encode('utf-8'), user_doc['password_hash']):
                 return User(
                     user_doc['username'],
@@ -193,10 +155,8 @@ class User:
         try:
             users_collection = db.get_collection('users')
 
-            # Hash new password
             hashed_password = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt())
 
-            # Update password
             result = users_collection.update_one(
                 {'username': username},
                 {'$set': {'password_hash': hashed_password}}
