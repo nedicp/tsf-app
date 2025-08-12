@@ -9,8 +9,8 @@ def validate_username(username):
     """Validate username format"""
     if len(username) < 3:
         return False, "Username must be at least 3 characters long"
-    if not re.match(r'^[a-zA-Z0-9._-]+$', username):
-        return False, "Username can only contain letters, numbers, dots, underscores and hyphens"
+    if not re.match(r'^[a-zA-Z0-9_-]+$', username):
+        return False, "Username can only contain letters, numbers, underscores and hyphens"
     return True, "Valid"
 
 def validate_password(password):
@@ -20,7 +20,7 @@ def validate_password(password):
     return True, "Valid"
 
 @auth_bp.route('/login', methods=['POST'])
-@limiter.limit("10 per minute")  # Prevent brute force attacks
+@limiter.limit("3 per minute")  # Prevent brute force attacks
 def login():
     """Handle user login"""
     try:
@@ -28,36 +28,16 @@ def login():
         username = data.get('username', '').strip()
         password = data.get('password', '')
 
-        # Validate input
         if not username or not password:
             return jsonify({
                 'success': False,
                 'message': 'Username and password are required'
             }), 400
 
-        # Validate username format
-        is_valid, message = validate_username(username)
-        if not is_valid:
-            return jsonify({
-                'success': False,
-                'message': message
-            }), 400
-
-        # Validate password
-        is_valid, message = validate_password(password)
-        if not is_valid:
-            return jsonify({
-                'success': False,
-                'message': message
-            }), 400
-
-        # Authenticate user
         user = User.authenticate(username, password)
 
         if user:
-            # Store user in session
             session['user'] = user.to_dict()
-            session.permanent = True
 
             return jsonify({
                 'success': True,
