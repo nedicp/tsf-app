@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify, session, redirect, url_for
+from flask import Blueprint, request, jsonify, session
 from backend.models.user import User
 from backend.utils.limiter import limiter
 import re

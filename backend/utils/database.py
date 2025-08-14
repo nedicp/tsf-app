@@ -28,14 +28,11 @@ class Database:
                 server_api=ServerApi('1')
             )
 
-            # Test the connection
             self._client.admin.command('ping')
             print("✅ Successfully connected to MongoDB!")
 
-            # Get the database
             self._db = self._client[Config.DATABASE_NAME]
 
-            # Create indexes for users collection
             self._create_indexes()
 
         except Exception as e:
@@ -47,10 +44,8 @@ class Database:
         try:
             users_collection = self._db.users
 
-            # Create unique index on username
             users_collection.create_index("username", unique=True)
 
-            # Create unique index on email
             users_collection.create_index("email", unique=True)
 
             print("✅ Database indexes created successfully")
@@ -77,5 +72,4 @@ class Database:
             self._db = None
             print("🔒 Database connection closed")
 
-# Global database instance
 db = Database()
