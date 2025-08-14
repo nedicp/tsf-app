@@ -120,48 +120,6 @@ def create_user_interactive():
         print(f"❌ Error creating user: {e}")
         return False
 
-def create_default_users():
-    """Create default admin and demo users"""
-    print("🏗️ Creating default users...")
-
-    default_users = [
-        {
-            'username': 'admin',
-            'email': 'admin@energenius.com',
-            'name': 'System Administrator',
-            'password': 'admin123',
-            'role': 'admin'
-        },
-        {
-            'username': 'analyst',
-            'email': 'analyst@energenius.com',
-            'name': 'Energy Analyst',
-            'password': 'analyst123',
-            'role': 'analyst'
-        },
-        {
-            'username': 'demo',
-            'email': 'demo@energenius.com',
-            'name': 'Demo User',
-            'password': 'demo123',
-            'role': 'user'
-        }
-    ]
-
-    for user_data in default_users:
-        user, message = User.create_user(
-            user_data['username'],
-            user_data['email'],
-            user_data['name'],
-            user_data['password'],
-            user_data['role']
-        )
-
-        if user:
-            print(f"✅ Created user: {user_data['username']} ({user_data['role']})")
-        else:
-            print(f"⚠️ Could not create {user_data['username']}: {message}")
-
 def list_users():
     """List all users in the database"""
     print("👥 Current Users")
@@ -191,23 +149,20 @@ def main():
         print("\n🔧 User Management Tool")
         print("=" * 30)
         print("1. Create new user")
-        print("2. Create default users")
-        print("3. List all users")
-        print("4. Exit")
+        print("2. List all users")
+        print("3. Exit")
 
-        choice = input("\nSelect option (1-4): ").strip()
+        choice = input("\nSelect option (1-3): ").strip()
 
         if choice == "1":
             create_user_interactive()
         elif choice == "2":
-            create_default_users()
-        elif choice == "3":
             list_users()
-        elif choice == "4":
+        elif choice == "3":
             print("👋 Goodbye!")
             break
         else:
-            print("❌ Please select 1, 2, 3, or 4")
+            print("❌ Please select 1, 2, or 3")
 
 if __name__ == "__main__":
     main()

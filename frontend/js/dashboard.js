@@ -391,16 +391,7 @@ class DashboardManager {
         this.generatePredictions();
     }
 
-    async checkMLServiceHealth() {
-        try {
-            const response = await fetch('/api/ml-service/health');
-            const result = await response.json();
-            return result.ml_service === 'online';
-        } catch (error) {
-            console.error('ML service health check failed:', error);
-            return false;
-        }
-    }
+
 
     async generatePredictions() {
         if (!this.uploadedData) {
@@ -411,19 +402,8 @@ class DashboardManager {
         const predictBtn = document.getElementById('predictBtn');
         const originalText = predictBtn.innerHTML;
 
-        predictBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Checking service...';
-        predictBtn.disabled = true;
-
-        const isServiceHealthy = await this.checkMLServiceHealth();
-
-        if (!isServiceHealthy) {
-            this.showServiceDownWarning();
-            predictBtn.innerHTML = originalText;
-            predictBtn.disabled = false;
-            return;
-        }
-
         predictBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating predictions...';
+        predictBtn.disabled = true;
 
         try {
             const predictionPeriod = document.getElementById('predictionPeriod').value;

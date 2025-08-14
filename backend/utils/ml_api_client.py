@@ -1,7 +1,7 @@
 import requests
 import numpy as np
 import pandas as pd
-from typing import Dict, List, Tuple, Optional
+from typing import Dict
 from backend.config import Config
 import logging
 
@@ -19,7 +19,7 @@ class MLAPIClient:
         try:
             response = requests.get(
                 f"{self.base_url}/healthz",
-                timeout=10  # Short timeout for health check
+                timeout=10
             )
 
             if response.status_code == 200:
@@ -43,32 +43,26 @@ class MLAPIClient:
             np.ndarray: 24x24 array ready for ML API
         """
         try:
-            # Ensure we have exactly 24 rows and 24 columns
             if len(df) != 24 or len(df.columns) != 24:
                 raise ValueError(f"Expected 24x24 data, got {len(df)}x{len(df.columns)}")
 
-            # Convert all columns to numeric, handling any non-numeric values
             numeric_data = []
 
             for _, row in df.iterrows():
                 numeric_row = []
                 for value in row:
                     try:
-                        # Handle various data types
                         if pd.isna(value) or value == '' or value is None:
                             numeric_row.append(0.0)
                         else:
                             numeric_row.append(float(value))
                     except (ValueError, TypeError):
-                        # If conversion fails, use 0.0 as default
                         numeric_row.append(0.0)
 
                 numeric_data.append(numeric_row)
 
-            # Convert to numpy array
             data_array = np.array(numeric_data, dtype=np.float32)
 
-            # Ensure shape is exactly (24, 24)
             if data_array.shape != (24, 24):
                 raise ValueError(f"Data conversion resulted in shape {data_array.shape}, expected (24, 24)")
 
@@ -91,11 +85,9 @@ class MLAPIClient:
             Dict with prediction results
         """
         try:
-            # Validate input shape
             if data.shape != (24, 24):
                 raise ValueError(f"Input data must be 24x24, got {data.shape}")
 
-            # Map model type to endpoint
             endpoint_map = {
                 'nbeats': '/predict/nbeats',
                 'cnn-nbeats': '/predict/cnn-nbeats',
@@ -108,14 +100,12 @@ class MLAPIClient:
             endpoint = endpoint_map[model_type]
             url = f"{self.base_url}{endpoint}"
 
-            # Prepare request payload
             payload = {
                 "data": data.tolist()
             }
 
             logger.info(f"Making prediction request to {url} with model {model_type}")
 
-            # Make API call
             response = requests.post(
                 url,
                 json=payload,
@@ -123,7 +113,6 @@ class MLAPIClient:
                 headers={'Content-Type': 'application/json'}
             )
 
-            # Parse response
             if response.status_code == 200:
                 result = response.json()
 
@@ -177,5 +166,5 @@ class MLAPIClient:
                 'model_type': model_type
             }
 
-# Global ML API client instance
+
 ml_client = MLAPIClient()

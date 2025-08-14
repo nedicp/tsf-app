@@ -1,4 +1,4 @@
-from flask import Flask, session, redirect, url_for, request, send_from_directory, jsonify
+from flask import Flask, session, redirect, send_from_directory, jsonify
 from flask_session import Session
 from flask_cors import CORS
 from backend.config import Config
@@ -13,10 +13,8 @@ def create_app():
                 static_folder='../frontend',
                 static_url_path='')
 
-    # Load configuration
     app.config.from_object(Config)
 
-    # Configure CORS
     cors_origins = app.config.get('CORS_ORIGINS', [])
     if os.environ.get('FLASK_ENV') == 'production':
         # Add production domain from environment
@@ -31,23 +29,19 @@ def create_app():
          supports_credentials=True,        # Allow cookies/sessions
          max_age=600)                      # Cache preflight for 10 minutes
 
-    # Initialize Rate Limiter
     limiter.init_app(app)
     limiter._default_limits = app.config.get('RATELIMIT_DEFAULT', "200 per day;50 per hour")
     limiter._storage_uri = app.config.get('RATELIMIT_STORAGE_URL', 'memory://')
     limiter._strategy = app.config.get('RATELIMIT_STRATEGY', 'fixed-window')
 
-    # Initialize Flask-Session
     Session(app)
 
-    # Initialize database connection
     try:
         db.connect()
         print("✅ Database connection initialized")
     except Exception as e:
         print(f"⚠️ Warning: Database connection failed: {e}")
 
-    # Error handler for rate limiting
     @app.errorhandler(429)
     def ratelimit_handler(e):
         return jsonify({
@@ -56,7 +50,6 @@ def create_app():
             'retry_after': e.retry_after
         }), 429
 
-    # Register blueprints
     app.register_blueprint(auth_bp)
     app.register_blueprint(api_bp)
 
@@ -78,7 +71,6 @@ def create_app():
     def health_check():
         """Health check endpoint"""
         try:
-            # Test database connection
             db.get_database().command('ping')
             db_status = "connected"
         except:
@@ -92,35 +84,9 @@ def create_app():
             'rate_limiting_enabled': True
         })
 
-    @app.route('/security-info')
-    @limiter.limit("30 per minute")
-    def security_info():
-        """Security information endpoint"""
-        return jsonify({
-            'cors': {
-                'enabled': True,
-                'allowed_origins': cors_origins
-            },
-            'rate_limiting': {
-                'enabled': True,
-                'default_limits': app.config.get('RATELIMIT_DEFAULT'),
-                'storage': app.config.get('RATELIMIT_STORAGE_URL'),
-                'strategy': app.config.get('RATELIMIT_STRATEGY')
-            },
-            'authentication': {
-                'session_based': True,
-                'password_hashing': 'bcrypt'
-            }
-        })
-
-    # Handle cleanup on app shutdown
     @app.teardown_appcontext
     def close_db(error):
         """Close database connection on shutdown"""
         pass  # Connection will be closed by the singleton
 
     return app
-
-if __name__ == '__main__':
-    app = create_app()
-    app.run(debug=True, host='0.0.0.0', port=5050)
