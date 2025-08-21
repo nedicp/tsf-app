@@ -45,14 +45,14 @@ def create_user_interactive():
             is_valid, message = validate_username(username)
             if is_valid:
                 break
-            print(f"❌ {message}")
+            print(f"{message}")
 
         # Get email
         while True:
             email = input("Enter email: ").strip()
             if validate_email(email):
                 break
-            print("❌ Please enter a valid email address")
+            print("Please enter a valid email address")
 
         # Get name
         name = input("Enter full name: ").strip()
@@ -80,7 +80,7 @@ def create_user_interactive():
                 role = "admin"
                 break
             else:
-                print("❌ Please select 1, 2, or 3")
+                print("Please select 1, 2, or 3")
 
         # Get password
         while True:
@@ -88,16 +88,16 @@ def create_user_interactive():
             is_valid, message = validate_password(password)
             if is_valid:
                 break
-            print(f"❌ {message}")
+            print(f"{message}")
 
         # Confirm password
         password_confirm = getpass.getpass("Confirm password: ")
         if password != password_confirm:
-            print("❌ Passwords do not match")
+            print("Passwords do not match")
             return False
 
         # Create user
-        print(f"\n📝 Creating user '{username}'...")
+        print(f"\nCreating user '{username}'...")
         user, message = User.create_user(username, email, name, password, role)
 
         if user:
@@ -110,14 +110,14 @@ def create_user_interactive():
             print(f"   Created: {user.created_at}")
             return True
         else:
-            print(f"❌ {message}")
+            print(f"{message}")
             return False
 
     except KeyboardInterrupt:
-        print("\n\n👋 User creation cancelled")
+        print("\n\nUser creation cancelled")
         return False
     except Exception as e:
-        print(f"❌ Error creating user: {e}")
+        print(f"Error creating user: {e}")
         return False
 
 def list_users():
@@ -141,12 +141,12 @@ def list_users():
             print()
 
     except Exception as e:
-        print(f"❌ Error listing users: {e}")
+        print(f"Error listing users: {e}")
 
 def main():
     """Main menu"""
     while True:
-        print("\n🔧 User Management Tool")
+        print("\nUser Management Tool")
         print("=" * 30)
         print("1. Create new user")
         print("2. List all users")
@@ -159,10 +159,10 @@ def main():
         elif choice == "2":
             list_users()
         elif choice == "3":
-            print("👋 Goodbye!")
+            print("Goodbye!")
             break
         else:
-            print("❌ Please select 1, 2, or 3")
+            print("Please select 1, 2, or 3")
 
 if __name__ == "__main__":
     main()

@@ -29,14 +29,14 @@ class Database:
             )
 
             self._client.admin.command('ping')
-            print("✅ Successfully connected to MongoDB!")
+            print("Successfully connected to MongoDB!")
 
             self._db = self._client[Config.DATABASE_NAME]
 
             self._create_indexes()
 
         except Exception as e:
-            print(f"❌ Failed to connect to MongoDB: {e}")
+            print(f"Failed to connect to MongoDB: {e}")
             raise
 
     def _create_indexes(self):
@@ -48,10 +48,10 @@ class Database:
 
             users_collection.create_index("email", unique=True)
 
-            print("✅ Database indexes created successfully")
+            print("Database indexes created successfully")
 
         except Exception as e:
-            print(f"⚠️ Warning: Could not create indexes: {e}")
+            print(f"Warning: Could not create indexes: {e}")
 
     def get_database(self):
         """Get the database instance"""
@@ -70,6 +70,6 @@ class Database:
             self._client.close()
             self._client = None
             self._db = None
-            print("🔒 Database connection closed")
+            print("Database connection closed")
 
 db = Database()

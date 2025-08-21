@@ -38,9 +38,9 @@ def create_app():
 
     try:
         db.connect()
-        print("✅ Database connection initialized")
+        print("Database connection initialized")
     except Exception as e:
-        print(f"⚠️ Warning: Database connection failed: {e}")
+        print(f"Warning: Database connection failed: {e}")
 
     @app.errorhandler(429)
     def ratelimit_handler(e):
