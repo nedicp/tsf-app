@@ -48,8 +48,8 @@ def upload_file():
         if file.filename == '':
             return jsonify({'success': False, 'message': 'No file selected'}), 400
 
-        if not file.filename.lower().endswith(('.xlsx', '.xls')):
-            return jsonify({'success': False, 'message': 'File must be Excel format (.xlsx or .xls)'}), 400
+        if not file.filename.lower().endswith(('.xlsx', '.xls', '.csv')):
+            return jsonify({'success': False, 'message': 'File must be Excel or CSV format (.xlsx, .xls, or .csv)'}), 400
 
         filename = secure_filename(file.filename)
         file_id = str(uuid.uuid4())
@@ -108,9 +108,12 @@ def fill_missing_values(df):
     return df_filled
 
 def validate_excel_structure(file_path):
-    """Validate Excel file structure according to strict requirements"""
+    """Validate file structure according to strict requirements"""
     try:
-        df = pd.read_excel(file_path, engine='openpyxl')
+        if file_path.lower().endswith('.csv'):
+            df = pd.read_csv(file_path)
+        else:
+            df = pd.read_excel(file_path, engine='openpyxl')
 
         errors = []
 
@@ -144,7 +147,7 @@ def validate_excel_structure(file_path):
         }
 
     except Exception as e:
-        return {'is_valid': False, 'errors': [f"Failed to read Excel file: {str(e)}"]}
+        return {'is_valid': False, 'errors': [f"Failed to read file: {str(e)}"]}
 
 def validate_data_patterns(df):
     """Validate data patterns according to business rules"""
@@ -309,7 +312,7 @@ def calculate_statistics(df):
 @api_bp.route('/predict', methods=['POST'])
 @limiter.limit("5 per minute")  # Max 5 predictions per minute (expensive operation)
 def generate_predictions():
-    """Generate predictions using specified model"""
+    """Generate predictions using specified models"""
     try:
         if 'user' not in session:
             return jsonify({'success': False, 'message': 'Not authenticated'}), 401
@@ -317,13 +320,22 @@ def generate_predictions():
         data = request.get_json()
         file_id = data.get('fileId')
         prediction_period = data.get('predictionPeriod', 24)
-        model_type = data.get('modelType', 'nbeats')
+        prediction_type = data.get('predictionType', 'country-level')
+        model_types = data.get('modelTypes', ['nbeats'])
 
         if not file_id or file_id not in uploaded_files:
             return jsonify({'success': False, 'message': 'Invalid or missing file'}), 400
 
+        if not model_types or len(model_types) == 0:
+            return jsonify({'success': False, 'message': 'At least one model must be selected'}), 400
+
         file_info = uploaded_files[file_id]
-        df = pd.read_excel(file_info['path'], engine='openpyxl')
+        file_path = file_info['path']
+
+        if file_path.lower().endswith('.csv'):
+            df = pd.read_csv(file_path)
+        else:
+            df = pd.read_excel(file_path, engine='openpyxl')
 
         if not ml_client.health_check():
             return jsonify({
@@ -352,60 +364,65 @@ def generate_predictions():
                 'message': f'Failed to prepare data for ML model: {str(e)}'
             }), 400
 
-        prediction_result = ml_client.make_prediction(ml_data, model_type)
+        all_predictions = {}
+        total_processing_time = 0
 
-        if not prediction_result['success']:
-            return jsonify({
-                'success': False,
-                'message': f"ML prediction failed: {prediction_result['error']}",
-                'service_status': 'error'
-            }), 500
+        for model_type in model_types:
+            prediction_result = ml_client.make_prediction(ml_data, model_type)
 
-        raw_predictions = prediction_result['predictions']
+            if not prediction_result['success']:
+                return jsonify({
+                    'success': False,
+                    'message': f"ML prediction failed for {model_type}: {prediction_result['error']}",
+                    'service_status': 'error'
+                }), 500
 
-        if len(raw_predictions) != 24:
-            return jsonify({
-                'success': False,
-                'message': f'Invalid prediction length: expected 24, got {len(raw_predictions)}'
-            }), 500
+            raw_predictions = prediction_result['predictions']
 
-        predictions_array = np.array(raw_predictions)
-        confidence_min = (predictions_array * 0.97).tolist()
-        confidence_max = (predictions_array * 1.03).tolist()
+            if len(raw_predictions) != 24:
+                return jsonify({
+                    'success': False,
+                    'message': f'Invalid prediction length for {model_type}: expected 24, got {len(raw_predictions)}'
+                }), 500
 
-        metadata = prediction_result.get('metadata', {})
-        processing_time = metadata.get('processing_time', 0)
+            predictions_array = np.array(raw_predictions)
+            confidence_min = (predictions_array * 0.97).tolist()
+            confidence_max = (predictions_array * 1.03).tolist()
 
-        predictions = {
-            'values': raw_predictions,
-            'confidence_min': confidence_min,
-            'confidence_max': confidence_max,
-            'processing_time': processing_time
-        }
+            metadata = prediction_result.get('metadata', {})
+            processing_time = metadata.get('processing_time', 0)
+            total_processing_time += processing_time
+
+            all_predictions[model_type] = {
+                'values': raw_predictions,
+                'confidence_min': confidence_min,
+                'confidence_max': confidence_max,
+                'processing_time': processing_time
+            }
 
         prediction_id = str(uuid.uuid4())
         prediction_results[prediction_id] = {
             'file_id': file_id,
-            'model_type': model_type,
-            'predictions': predictions,
+            'model_types': model_types,
+            'predictions': all_predictions,
             'timestamp': datetime.now(),
             'user_id': session['user']['username']
         }
 
+        response_data = {
+            'predictionId': prediction_id,
+            'hours': hour_labels,
+            'historical': consumption_data,
+            'modelTypes': model_types,
+            'predictions': all_predictions,
+            'startHour': start_hour,
+            'totalProcessingTime': total_processing_time,
+            'serviceStatus': 'online'
+        }
+
         return jsonify({
             'success': True,
-            'data': {
-                'predictionId': prediction_id,
-                'hours': hour_labels,
-                'historical': consumption_data,
-                'predictions': predictions['values'],
-                'confidenceMin': predictions['confidence_min'],
-                'confidenceMax': predictions['confidence_max'],
-                'modelType': model_type,
-                'startHour': start_hour,
-                'processingTime': predictions.get('processing_time', 0),
-                'serviceStatus': 'online'
-            }
+            'data': response_data
         })
 
     except Exception as e:
@@ -438,28 +455,37 @@ def export_predictions():
             hour = (start_hour + i) % 24
             hour_labels.append(f"{hour:02d}:00")
 
-        confidence_min = prediction_data.get('confidenceMin', [])
-        confidence_max = prediction_data.get('confidenceMax', [])
-        confidence_intervals = []
-
-        for min_val, max_val in zip(confidence_min, confidence_max):
-            if min_val is not None and max_val is not None:
-                confidence_intervals.append(f"{min_val:.4f}-{max_val:.4f}")
-            else:
-                confidence_intervals.append("--")
-
         historical_data = prediction_data.get('historical', [])
-        prediction_values = prediction_data.get('predictions', [])
-
         formatted_historical = [f"{val:.4f}" if val is not None else "--" for val in historical_data]
-        formatted_predictions = [f"{val:.4f}" if val is not None else "--" for val in prediction_values]
 
-        export_df = pd.DataFrame({
+        predictions = prediction_data.get('predictions', {})
+        model_types = prediction_data.get('modelTypes', [])
+
+        export_data = {
             'Sat': hour_labels,
-            'Prethodna 24h': formatted_historical,
-            'Predikcija 24h': formatted_predictions,
-            'Ocekivani interval odstupanja': confidence_intervals
-        })
+            'Prethodna 24h': formatted_historical
+        }
+
+        for model_type in model_types:
+            model_predictions = predictions.get(model_type, {})
+
+            prediction_values = model_predictions.get('values', [])
+            formatted_predictions = [f"{val:.4f}" if val is not None else "--" for val in prediction_values]
+            export_data[f'Predikcija {model_type.upper()}'] = formatted_predictions
+
+            confidence_min = model_predictions.get('confidence_min', [])
+            confidence_max = model_predictions.get('confidence_max', [])
+            confidence_intervals = []
+
+            for min_val, max_val in zip(confidence_min, confidence_max):
+                if min_val is not None and max_val is not None:
+                    confidence_intervals.append(f"{min_val:.4f}-{max_val:.4f}")
+                else:
+                    confidence_intervals.append("--")
+
+            export_data[f'Ocekivani interval odstupanja {model_type.upper()}'] = confidence_intervals
+
+        export_df = pd.DataFrame(export_data)
 
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
 

@@ -57,11 +57,16 @@
                   </button>
                 </p>
                 <div class="upload-info">
-                  <small>Required: Excel file with input data</small>
-                  <small>Supported formats: .xlsx, .xls</small>
+                  <small>Required: Data file with input data</small>
+                  <small>Supported formats: .xlsx, .xls, .csv</small>
                 </div>
               </div>
-              <input type="file" id="fileInput" accept=".xlsx,.xls" hidden />
+              <input
+                type="file"
+                id="fileInput"
+                accept=".xlsx,.xls,.csv"
+                hidden
+              />
             </div>
 
             <div class="upload-status" id="uploadStatus" style="display: none">
@@ -102,12 +107,31 @@
               </div>
 
               <div class="control-group">
-                <label for="modelType">AI Model</label>
-                <select id="modelType" class="form-select">
-                  <option value="nbeats">N-BEATS</option>
-                  <option value="cnn-nbeats">CNN-N-BEATS</option>
-                  <option value="nbeats-cnn">N-BEATS-CNN</option>
+                <label for="predictionType">Prediction Type</label>
+                <select id="predictionType" class="form-select">
+                  <option value="country-level">Country level</option>
                 </select>
+              </div>
+
+              <div class="control-group">
+                <label>AI Models</label>
+                <div class="model-checkboxes" id="modelCheckboxes">
+                  <label class="checkbox-label">
+                    <input type="checkbox" id="nbeats" value="nbeats" checked />
+                    <span class="checkmark"></span>
+                    N-BEATS
+                  </label>
+                  <label class="checkbox-label">
+                    <input type="checkbox" id="cnn-nbeats" value="cnn-nbeats" />
+                    <span class="checkmark"></span>
+                    CNN-N-BEATS
+                  </label>
+                  <label class="checkbox-label">
+                    <input type="checkbox" id="nbeats-cnn" value="nbeats-cnn" />
+                    <span class="checkmark"></span>
+                    N-BEATS-CNN
+                  </label>
+                </div>
               </div>
 
               <button class="predict-btn" id="predictBtn" disabled>
@@ -162,55 +186,74 @@
 
           <div class="dashboard-card stats-export-section">
             <div class="card-header">
-              <h2><i class="fas fa-analytics"></i> Prediction Statistics</h2>
+              <h2>
+                <i class="fas fa-analytics"></i>
+                <span id="statsTitle">Prediction Statistics</span>
+                <select
+                  id="statsModelSelect"
+                  class="form-select"
+                  style="
+                    display: none;
+                    margin-left: 1rem;
+                    min-width: 120px;
+                    font-size: 0.875rem;
+                  "
+                >
+                  <option value="0">NBEATS</option>
+                </select>
+              </h2>
             </div>
 
-            <div class="stats-grid" id="statsGrid">
-              <div class="stat-item">
-                <div class="stat-icon">
-                  <i class="fas fa-calculator"></i>
+            <div class="stats-container">
+              <div class="stats-grid" id="statsGrid">
+                <div class="stat-item">
+                  <div class="stat-icon">
+                    <i class="fas fa-calculator"></i>
+                  </div>
+                  <div class="stat-content">
+                    <span class="stat-label">Average Consumption</span>
+                    <span class="stat-value" id="avgPredictionConsumption"
+                      >--</span
+                    >
+                  </div>
                 </div>
-                <div class="stat-content">
-                  <span class="stat-label">Average Consumption</span>
-                  <span class="stat-value" id="avgPredictionConsumption"
-                    >--</span
-                  >
-                </div>
-              </div>
 
-              <div class="stat-item">
-                <div class="stat-icon">
-                  <i class="fas fa-bolt"></i>
+                <div class="stat-item">
+                  <div class="stat-icon">
+                    <i class="fas fa-bolt"></i>
+                  </div>
+                  <div class="stat-content">
+                    <span class="stat-label">Daily Total</span>
+                    <span class="stat-value" id="dailyTotalConsumption"
+                      >--</span
+                    >
+                  </div>
                 </div>
-                <div class="stat-content">
-                  <span class="stat-label">Daily Total</span>
-                  <span class="stat-value" id="dailyTotalConsumption">--</span>
-                </div>
-              </div>
 
-              <div class="stat-item">
-                <div class="stat-icon">
-                  <i class="fas fa-arrow-trend-up"></i>
+                <div class="stat-item">
+                  <div class="stat-icon">
+                    <i class="fas fa-arrow-trend-up"></i>
+                  </div>
+                  <div class="stat-content">
+                    <span class="stat-label">Peak Consumption</span>
+                    <span class="stat-value" id="peakPredictionConsumption"
+                      >--</span
+                    >
+                    <span class="stat-time" id="peakHour">--</span>
+                  </div>
                 </div>
-                <div class="stat-content">
-                  <span class="stat-label">Peak Consumption</span>
-                  <span class="stat-value" id="peakPredictionConsumption"
-                    >--</span
-                  >
-                  <span class="stat-time" id="peakHour">--</span>
-                </div>
-              </div>
 
-              <div class="stat-item">
-                <div class="stat-icon">
-                  <i class="fas fa-arrow-trend-down"></i>
-                </div>
-                <div class="stat-content">
-                  <span class="stat-label">Minimum Consumption</span>
-                  <span class="stat-value" id="minPredictionConsumption"
-                    >--</span
-                  >
-                  <span class="stat-time" id="minHour">--</span>
+                <div class="stat-item">
+                  <div class="stat-icon">
+                    <i class="fas fa-arrow-trend-down"></i>
+                  </div>
+                  <div class="stat-content">
+                    <span class="stat-label">Minimum Consumption</span>
+                    <span class="stat-value" id="minPredictionConsumption"
+                      >--</span
+                    >
+                    <span class="stat-time" id="minHour">--</span>
+                  </div>
                 </div>
               </div>
             </div>

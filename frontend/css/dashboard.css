@@ -394,6 +394,72 @@ body {
     border-color: rgba(59, 130, 246, 0.5);
 }
 
+.model-checkboxes {
+    display: flex;
+    flex-direction: row;
+    gap: 1rem;
+    margin-top: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    color: #e2e8f0;
+    font-weight: 400;
+}
+
+.checkbox-label:hover {
+    background: rgba(59, 130, 246, 0.1);
+}
+
+.checkbox-label input[type="checkbox"] {
+    display: none;
+}
+
+.checkmark {
+    width: 18px;
+    height: 18px;
+    border: 2px solid rgba(71, 85, 105, 0.5);
+    border-radius: 4px;
+    background: rgba(15, 23, 42, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.checkbox-label input[type="checkbox"]:checked + .checkmark {
+    background: #3b82f6;
+    border-color: #3b82f6;
+}
+
+.checkbox-label input[type="checkbox"]:checked + .checkmark:after {
+    content: "✓";
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.model-selector {
+    margin-top: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.model-selector select {
+    min-width: 150px;
+    font-size: 0.875rem;
+}
+
+
 .predict-btn {
     background: linear-gradient(135deg, #3b82f6, #10b981);
     border: none;

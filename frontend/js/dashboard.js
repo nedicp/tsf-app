@@ -5,6 +5,7 @@ class DashboardManager {
         this.uploadedData = null;
         this.predictionResults = null;
         this.chart = null;
+        this.currentStatsModel = 0;
 
         this.expectedColumns = [
             'Sjutra praznik',
@@ -59,6 +60,8 @@ class DashboardManager {
         this.initializeChartControls();
 
         this.initializeExportControls();
+
+        this.initializeStatsNavigation();
     }
 
     initializeFileUpload() {
@@ -155,38 +158,51 @@ class DashboardManager {
         const tableDiv = document.getElementById('predictionTable');
 
         const hours = data.hours || Array.from({length: 24}, (_, i) => `${i.toString().padStart(2, '0')}:00`);
-        const predictions = data.predictions || [];
-        const confidenceMin = data.confidenceMin || [];
-        const confidenceMax = data.confidenceMax || [];
         const historical = data.historical || [];
+        const predictions = data.predictions || {};
+        const modelTypes = data.modelTypes || [];
 
-        const tableData = hours.map((hour, index) => ({
-            hour: hour,
-            historical: historical[index] || 0,
-            predicted: predictions[index] || 0,
-            confidenceMin: confidenceMin[index] || 0,
-            confidenceMax: confidenceMax[index] || 0
-        }));
+        let headerHTML = '<th>Hour</th><th>Previous 24h (MWh)</th>';
+
+        modelTypes.forEach(modelType => {
+            const modelName = modelType.toUpperCase();
+            headerHTML += `<th>${modelName} (MWh)</th>`;
+        });
+
+        modelTypes.forEach(modelType => {
+            const modelName = modelType.toUpperCase();
+            headerHTML += `<th>${modelName} Range (±3%)</th>`;
+        });
+
+        const tableRows = hours.map((hour, index) => {
+            let rowHTML = `
+                <td class="hour-cell">${hour}</td>
+                <td class="value-cell">${(historical[index] || 0).toFixed(3)}</td>
+            `;
+
+            modelTypes.forEach(modelType => {
+                const modelPredictions = predictions[modelType] || {};
+                const predicted = modelPredictions.values ? modelPredictions.values[index] || 0 : 0;
+                rowHTML += `<td class="value-cell">${predicted.toFixed(3)}</td>`;
+            });
+
+            modelTypes.forEach(modelType => {
+                const modelPredictions = predictions[modelType] || {};
+                const confMin = modelPredictions.confidence_min ? modelPredictions.confidence_min[index] || 0 : 0;
+                const confMax = modelPredictions.confidence_max ? modelPredictions.confidence_max[index] || 0 : 0;
+                rowHTML += `<td class="confidence-cell">${confMin.toFixed(3)} - ${confMax.toFixed(3)}</td>`;
+            });
+
+            return `<tr>${rowHTML}</tr>`;
+        }).join('');
 
         const table = document.createElement('table');
         table.innerHTML = `
             <thead>
-                <tr>
-                    <th>Hour</th>
-                    <th>Previous 24h (MWh)</th>
-                    <th>Next 24h (MWh)</th>
-                    <th>Confidence Range (±3%)</th>
-                </tr>
+                <tr>${headerHTML}</tr>
             </thead>
             <tbody>
-                ${tableData.map(row => `
-                    <tr>
-                        <td class="hour-cell">${row.hour}</td>
-                        <td class="value-cell">${row.historical.toFixed(3)}</td>
-                        <td class="value-cell">${row.predicted.toFixed(3)}</td>
-                        <td class="confidence-cell">${row.confidenceMin.toFixed(3)} - ${row.confidenceMax.toFixed(3)}</td>
-                    </tr>
-                `).join('')}
+                ${tableRows}
             </tbody>
         `;
 
@@ -198,6 +214,50 @@ class DashboardManager {
         document.getElementById('exportCSV').addEventListener('click', () => {
             this.exportData('csv');
         });
+    }
+
+
+    setupStatsNavigation(modelTypes) {
+        const statsModelSelect = document.getElementById('statsModelSelect');
+
+        if (modelTypes.length <= 1) {
+            statsModelSelect.style.display = 'none';
+            return;
+        }
+
+        statsModelSelect.innerHTML = '';
+
+        modelTypes.forEach((modelType, index) => {
+            const option = document.createElement('option');
+            option.value = index.toString();
+            option.textContent = modelType.toUpperCase();
+            statsModelSelect.appendChild(option);
+        });
+
+        const self = this;
+
+        statsModelSelect.onchange = null;
+
+        statsModelSelect.addEventListener('change', function(e) {
+            self.currentStatsModel = parseInt(e.target.value);
+            if (self.predictionResults) {
+                self.updatePredictionStatistics(self.predictionResults);
+            }
+        });
+
+
+        this.currentStatsModel = 0;
+        statsModelSelect.value = '0';
+        statsModelSelect.style.display = 'inline-block';
+
+        window.testModelDropdown = function() {
+            const dropdown = document.getElementById('statsModelSelect');
+            if (dropdown) {
+                dropdown.value = '1';
+                dropdown.dispatchEvent(new Event('change'));
+            } else {
+            }
+        };
     }
 
     handleFileSelection(file) {
@@ -214,7 +274,9 @@ class DashboardManager {
         const maxSize = 10 * 1024 * 1024; // 10MB
         const allowedTypes = [
             'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            'application/vnd.ms-excel'
+            'application/vnd.ms-excel',
+            'text/csv',
+            'application/csv'
         ];
 
         if (file.size > maxSize) {
@@ -222,12 +284,19 @@ class DashboardManager {
             return false;
         }
 
-        if (!allowedTypes.includes(file.type)) {
-            this.showNotification('Please upload an Excel file (.xlsx or .xls) with the required 24×24 structure', 'error');
+        const isCSV = file.name.toLowerCase().endsWith('.csv') || file.type === 'text/csv' || file.type === 'application/csv';
+        const isExcel = allowedTypes.includes(file.type) && !isCSV;
+
+        if (!isCSV && !isExcel) {
+            this.showNotification('Please upload a data file (.xlsx, .xls, or .csv) with the required structure', 'error');
             return false;
         }
 
-        this.showNotification('Validating Excel structure... File must have exactly 25 rows × 24 columns (1 header + 24 data rows)', 'info');
+        if (isCSV) {
+            this.showNotification('Validating CSV structure... File must have exactly 25 rows × 24 columns (1 header + 24 data rows)', 'info');
+        } else {
+            this.showNotification('Validating Excel structure... File must have exactly 25 rows × 24 columns (1 header + 24 data rows)', 'info');
+        }
 
         return true;
     }
@@ -393,9 +462,20 @@ class DashboardManager {
 
 
 
+    getSelectedModels() {
+        const checkboxes = document.querySelectorAll('#modelCheckboxes input[type="checkbox"]:checked');
+        return Array.from(checkboxes).map(cb => cb.value);
+    }
+
     async generatePredictions() {
         if (!this.uploadedData) {
             this.showNotification('Please upload data first', 'error');
+            return;
+        }
+
+        const selectedModels = this.getSelectedModels();
+        if (selectedModels.length === 0) {
+            this.showNotification('Please select at least one AI model', 'error');
             return;
         }
 
@@ -407,7 +487,7 @@ class DashboardManager {
 
         try {
             const predictionPeriod = document.getElementById('predictionPeriod').value;
-            const modelType = document.getElementById('modelType').value;
+            const predictionType = document.getElementById('predictionType').value;
 
             const response = await fetch('/api/predict', {
                 method: 'POST',
@@ -417,7 +497,8 @@ class DashboardManager {
                 body: JSON.stringify({
                     fileId: this.uploadedData.fileId,
                     predictionPeriod: parseInt(predictionPeriod),
-                    modelType: modelType
+                    predictionType: predictionType,
+                    modelTypes: selectedModels
                 })
             });
 
@@ -428,9 +509,9 @@ class DashboardManager {
                 this.displayPredictionResults(result.data);
                 this.enableExportControls();
 
-                const processingTime = result.data.processingTime || 0;
+                const modelsUsed = selectedModels.map(m => m.toUpperCase()).join(', ');
                 this.showNotification(
-                    `Predictions generated successfully in ${processingTime.toFixed(2)}s using ${modelType.toUpperCase()}!`,
+                    `Predictions generated successfully using ${modelsUsed}!`,
                     'success'
                 );
             } else {
@@ -508,10 +589,12 @@ class DashboardManager {
     }
 
     updatePredictionStatistics(data) {
-        const predictions = data.predictions || [];
+        const predictions = data.predictions || {};
+        const modelTypes = data.modelTypes || [];
         const hours = data.hours || Array.from({length: 24}, (_, i) => `${i.toString().padStart(2, '0')}:00`);
 
-        if (predictions.length === 0) {
+        if (modelTypes.length === 0 || Object.keys(predictions).length === 0) {
+            document.getElementById('statsTitle').textContent = 'Prediction Statistics';
             document.getElementById('avgPredictionConsumption').textContent = '--';
             document.getElementById('dailyTotalConsumption').textContent = '--';
             document.getElementById('peakPredictionConsumption').textContent = '--';
@@ -521,13 +604,50 @@ class DashboardManager {
             return;
         }
 
-        const total = predictions.reduce((sum, val) => sum + val, 0);
-        const average = total / predictions.length;
-        const peakValue = Math.max(...predictions);
-        const peakIndex = predictions.indexOf(peakValue);
+        const statsModelSelect = document.getElementById('statsModelSelect');
+        const needsSetup = modelTypes.length > 1 &&
+                          (statsModelSelect.style.display === 'none' ||
+                           statsModelSelect.options.length !== modelTypes.length);
+
+        if (needsSetup) {
+            this.setupStatsNavigation(modelTypes);
+        } else {
+        }
+
+        const selectedModelIndex = Math.min(this.currentStatsModel, modelTypes.length - 1);
+        const selectedModel = modelTypes[selectedModelIndex];
+        const modelPredictions = predictions[selectedModel]?.values || [];
+
+        if (modelTypes.length > 1) {
+            document.getElementById('statsTitle').textContent = 'Prediction Statistics';
+
+            const statsModelSelect = document.getElementById('statsModelSelect');
+            if (statsModelSelect) {
+                statsModelSelect.value = this.currentStatsModel.toString();
+            } else {
+            }
+        } else {
+            document.getElementById('statsTitle').textContent =
+                `Prediction Statistics (${selectedModel.toUpperCase()})`;
+        }
+
+        if (modelPredictions.length === 0) {
+            document.getElementById('avgPredictionConsumption').textContent = '--';
+            document.getElementById('dailyTotalConsumption').textContent = '--';
+            document.getElementById('peakPredictionConsumption').textContent = '--';
+            document.getElementById('peakHour').textContent = '--';
+            document.getElementById('minPredictionConsumption').textContent = '--';
+            document.getElementById('minHour').textContent = '--';
+            return;
+        }
+
+        const total = modelPredictions.reduce((sum, val) => sum + val, 0);
+        const average = total / modelPredictions.length;
+        const peakValue = Math.max(...modelPredictions);
+        const peakIndex = modelPredictions.indexOf(peakValue);
         const peakHour = hours[peakIndex];
-        const minValue = Math.min(...predictions);
-        const minIndex = predictions.indexOf(minValue);
+        const minValue = Math.min(...modelPredictions);
+        const minIndex = modelPredictions.indexOf(minValue);
         const minHour = hours[minIndex];
 
         document.getElementById('avgPredictionConsumption').textContent =
@@ -553,60 +673,58 @@ class DashboardManager {
             this.chart.destroy();
         }
 
-        const chartData = {
-            hours: data.hours || Array.from({length: 24}, (_, i) => `${i.toString().padStart(2, '0')}:00`),
-            predictions: data.predictions || [],
-            confidenceMin: data.confidenceMin || [],
-            confidenceMax: data.confidenceMax || [],
-            historical: data.historical || []
+        const hours = data.hours || Array.from({length: 24}, (_, i) => `${i.toString().padStart(2, '0')}:00`);
+        const historical = data.historical || [];
+        const predictions = data.predictions || {};
+        const modelTypes = data.modelTypes || [];
+
+        const modelColors = {
+            'nbeats': '#10b981',
+            'cnn-nbeats': '#f59e0b',
+            'nbeats-cnn': '#ef4444'
         };
+
+        const datasets = [
+            {
+                label: 'Previous 24h',
+                data: historical,
+                borderColor: '#3b82f6',
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                borderWidth: 2,
+                fill: false,
+                pointBackgroundColor: '#3b82f6',
+                pointBorderColor: '#ffffff',
+                pointBorderWidth: 2,
+                pointRadius: 3,
+                pointHoverRadius: 5
+            }
+        ];
+
+        modelTypes.forEach(modelType => {
+            const modelPredictions = predictions[modelType] || {};
+            const modelValues = modelPredictions.values || [];
+            const color = modelColors[modelType] || '#8b5cf6';
+
+            datasets.push({
+                label: modelType.toUpperCase(),
+                data: modelValues,
+                borderColor: color,
+                backgroundColor: `${color}20`,
+                borderWidth: 3,
+                fill: false,
+                pointBackgroundColor: color,
+                pointBorderColor: '#ffffff',
+                pointBorderWidth: 2,
+                pointRadius: 4,
+                pointHoverRadius: 6
+            });
+        });
 
         this.chart = new Chart(ctx, {
             type: 'line',
             data: {
-                labels: chartData.hours,
-                datasets: [
-                    {
-                        label: 'Previous 24h',
-                        data: chartData.historical,
-                        borderColor: '#3b82f6',
-                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                        borderWidth: 2,
-                        fill: false,
-                        pointBackgroundColor: '#3b82f6',
-                        pointBorderColor: '#ffffff',
-                        pointBorderWidth: 2,
-                        pointRadius: 3,
-                        pointHoverRadius: 5
-                    },
-                    {
-                        label: 'Confidence Range (±3%)',
-                        data: chartData.confidenceMin,
-                        backgroundColor: 'rgba(107, 114, 128, 0.1)',
-                        borderColor: 'transparent',
-                        fill: '+2'
-                    },
-                    {
-                        label: 'Confidence Range (±3%)',
-                        data: chartData.confidenceMax,
-                        backgroundColor: 'rgba(107, 114, 128, 0.1)',
-                        borderColor: 'transparent',
-                        fill: false
-                    },
-                    {
-                        label: 'Next 24h',
-                        data: chartData.predictions,
-                        borderColor: '#10b981',
-                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                        borderWidth: 3,
-                        fill: false,
-                        pointBackgroundColor: '#10b981',
-                        pointBorderColor: '#ffffff',
-                        pointBorderWidth: 2,
-                        pointRadius: 4,
-                        pointHoverRadius: 6
-                    }
-                ]
+                labels: hours,
+                datasets: datasets
             },
             options: {
                 responsive: true,
@@ -619,31 +737,41 @@ class DashboardManager {
                     legend: {
                         labels: {
                             color: '#e2e8f0',
-                            filter: (legendItem, chartData) => {
-
-                                return legendItem.text === 'Next 24h' ||
-                                       legendItem.text === 'Previous 24h';
+                            filter: (legendItem) => {
+                                return true;
                             }
                         }
                     },
                     tooltip: {
                         callbacks: {
                             label: (context) => {
-                                const datasetIndex = context.datasetIndex;
                                 const value = context.parsed.y;
+                                const datasetLabel = context.dataset.label;
 
-                                if (datasetIndex === 0) {
+                                if (datasetLabel === 'Previous 24h') {
                                     return `Previous 24h: ${value.toFixed(2)} MWh`;
-                                } else if (datasetIndex === 3) {
-                                    const hourIndex = context.dataIndex;
-                                    const minValue = chartData.confidenceMin[hourIndex];
-                                    const maxValue = chartData.confidenceMax[hourIndex];
-                                    return [
-                                        `Next 24h: ${value.toFixed(2)} MWh`,
-                                        `Confidence Range: ${minValue?.toFixed(2)} - ${maxValue?.toFixed(2)} MWh`
-                                    ];
+                                } else {
+                                    const modelType = modelTypes.find(type =>
+                                        datasetLabel.includes(type.toUpperCase())
+                                    );
+
+                                    if (modelType && predictions[modelType]) {
+                                        const hourIndex = context.dataIndex;
+                                        const confMin = predictions[modelType].confidence_min?.[hourIndex];
+                                        const confMax = predictions[modelType].confidence_max?.[hourIndex];
+
+                                        const baseLabel = `${datasetLabel}: ${value.toFixed(2)} MWh`;
+                                        if (confMin !== undefined && confMax !== undefined) {
+                                            return [
+                                                baseLabel,
+                                                `Range: ${confMin.toFixed(2)} - ${confMax.toFixed(2)} MWh`
+                                            ];
+                                        }
+                                        return baseLabel;
+                                    }
+
+                                    return `${datasetLabel}: ${value.toFixed(2)} MWh`;
                                 }
-                                return null;
                             }
                         }
                     }
