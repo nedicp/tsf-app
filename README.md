@@ -114,7 +114,7 @@ This command will:
 
 This project uses [**pre-commit**](https://pre-commit.com) to ensure code quality, formatting, type checking, and config validity before any code is committed.
 
-## 3.1 What it Does
+## 2.1 What it Does
 
 Pre-commit runs a set of configured "hooks" (small checks or scripts) every time you run `git commit`. If any hook modifies a file or fails, the commit is aborted, allowing you to review the changes or fix the errors before trying to commit again.
 
@@ -125,7 +125,7 @@ The hooks configured for this project likely include:
 - **Security Checks:** Tools to prevent committing secrets or known vulnerabilities.
 - *(Add/remove based on your actual `.pre-commit-config.yaml`)*
 
-## 3.2 Setup
+## 2.2 Setup
 
 First, ensure you have installed the development dependencies:
 
@@ -141,7 +141,7 @@ poetry run pre-commit install
 
 This command only needs to be run once per project clone. It sets up the hooks to run automatically on git commit.
 
-## 3.3 Usage
+## 2.3 Usage
 
 **Automatic:** Simply run git commit as usual. If any hooks fail, address the reported issues (some hooks like formatters might fix files automatically) and git add the changes before committing again.
 
@@ -153,11 +153,11 @@ poetry run pre-commit run --all-files
 
 This is useful for checking the entire codebase or after making significant changes.
 
-
-# 5. Usage
+# 3. Usage
 ## Run the app
 ```python
 poetry run python run.py
 ```
 
 Enjoy!
+
